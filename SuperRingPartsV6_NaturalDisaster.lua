@@ -3,10 +3,10 @@ debugX = true
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/lzhenwei76-beep/RayfieldCopy/refs/heads/main/source.lua'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Super Ring Parts V6",
+    Name = "Super Ring Parts V7",
     Icon = 0,
-    LoadingTitle = "Super Ring Parts V6",
-    LoadingSubtitle = "by lukas",
+    LoadingTitle = "Super Ring Parts V7",
+    LoadingSubtitle = "by lzhenwei",
     Theme = "Default",
     DisableRayfieldPrompts = false,
     DisableBuildWarnings = false,
