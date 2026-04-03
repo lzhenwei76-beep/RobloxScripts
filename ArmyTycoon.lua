@@ -1,12 +1,12 @@
 debugX = true
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/lzhenwei76-beep/RayfieldCopy/refs/heads/main/source.lua'))()
 
 local Window = Rayfield:CreateWindow({
     Name = "Army Tycoon GUI",
     Icon = 0,
     LoadingTitle = "Army Tycoon GUI",
-    LoadingSubtitle = "By Rayfield",
+    LoadingSubtitle = "By lzhenwei",
     Theme = "Default",
     DisableRayfieldPrompts = false,
     DisableBuildWarnings = false,
