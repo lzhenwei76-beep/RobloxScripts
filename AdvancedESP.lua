@@ -1,8 +1,8 @@
--- Advanced ESP V5 - WORKING VERSION
--- Fix: ESP wird jetzt korrekt angezeigt
+-- Advanced ESP Script - Rayfield GUI
+-- Clean & Simple ESP
 
-if getgenv().ESP_V5_LOADED then return end
-getgenv().ESP_V5_LOADED = true
+if getgenv().ADVANCED_ESP_LOADED then return end
+getgenv().ADVANCED_ESP_LOADED = true
 
 -- ========== LOAD RAYFIELD ==========
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/lzhenwei76-beep/RayfieldCopy/refs/heads/main/source.lua'))()
@@ -14,7 +14,6 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
 
 -- ========== CREATE GUI PARENT ==========
 local espGui = Instance.new("ScreenGui")
@@ -86,7 +85,7 @@ local function getESPColor(player)
     end
 end
 
--- ========== CREATE ESP (WORKING VERSION) ==========
+-- ========== CREATE ESP ==========
 local function createESP(player)
     if espObjects[player] then return end
     
@@ -190,7 +189,6 @@ local function updateESP()
     local center = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
     
     for player, esp in pairs(espObjects) do
-        -- Check if should show
         local show = shouldShowESP(player)
         
         if show then
@@ -200,12 +198,10 @@ local function updateESP()
                 local head = char:FindFirstChild("Head")
                 
                 if hrp and head then
-                    -- Get screen positions
                     local headPos, headOnScreen = camera:WorldToViewportPoint(head.Position)
                     local hrpPos, hrpOnScreen = camera:WorldToViewportPoint(hrp.Position)
                     
                     if headOnScreen and hrpOnScreen and headPos.Z > 0 then
-                        -- Calculate box size based on distance
                         local dist = (hrp.Position - (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position or Vector3.new())).Magnitude
                         
                         if dist <= maxDistance then
@@ -214,7 +210,6 @@ local function updateESP()
                             local boxX = headPos.X - boxWidth / 2
                             local boxY = headPos.Y - boxHeight
                             
-                            -- Update Box
                             if showBox and esp.Box then
                                 esp.Box.Size = UDim2.new(0, boxWidth, 0, boxHeight)
                                 esp.Box.Position = UDim2.new(0, boxX, 0, boxY)
@@ -226,7 +221,6 @@ local function updateESP()
                                 esp.Box.Visible = false
                             end
                             
-                            -- Update Name
                             if showName and esp.NameLabel then
                                 esp.NameLabel.Position = UDim2.new(0, boxX + boxWidth/2 - 60, 0, boxY - 18)
                                 esp.NameLabel.Text = player.Name
@@ -236,7 +230,6 @@ local function updateESP()
                                 esp.NameLabel.Visible = false
                             end
                             
-                            -- Update Distance
                             if showDistance and esp.DistanceLabel then
                                 esp.DistanceLabel.Position = UDim2.new(0, boxX + boxWidth/2 - 40, 0, boxY + boxHeight + 2)
                                 esp.DistanceLabel.Text = math.floor(dist) .. "m"
@@ -245,7 +238,6 @@ local function updateESP()
                                 esp.DistanceLabel.Visible = false
                             end
                             
-                            -- Update Health Bar
                             if showHealth and esp.HealthBg then
                                 esp.HealthBg.Size = UDim2.new(0, boxWidth, 0, 4)
                                 esp.HealthBg.Position = UDim2.new(0, boxX, 0, boxY + boxHeight + 18)
@@ -259,7 +251,6 @@ local function updateESP()
                                 esp.HealthBg.Visible = false
                             end
                             
-                            -- Update Tracer
                             if showTracer and esp.Tracer then
                                 local dx = headPos.X - center.X
                                 local dy = headPos.Y - center.Y
@@ -277,7 +268,6 @@ local function updateESP()
                                 esp.Tracer.Visible = false
                             end
                         else
-                            -- Hide if too far
                             if esp.Box then esp.Box.Visible = false end
                             if esp.NameLabel then esp.NameLabel.Visible = false end
                             if esp.DistanceLabel then esp.DistanceLabel.Visible = false end
@@ -285,7 +275,6 @@ local function updateESP()
                             if esp.Tracer then esp.Tracer.Visible = false end
                         end
                     else
-                        -- Hide if off screen
                         if esp.Box then esp.Box.Visible = false end
                         if esp.NameLabel then esp.NameLabel.Visible = false end
                         if esp.DistanceLabel then esp.DistanceLabel.Visible = false end
@@ -293,7 +282,6 @@ local function updateESP()
                         if esp.Tracer then esp.Tracer.Visible = false end
                     end
                 else
-                    -- Hide if no character
                     if esp.Box then esp.Box.Visible = false end
                     if esp.NameLabel then esp.NameLabel.Visible = false end
                     if esp.DistanceLabel then esp.DistanceLabel.Visible = false end
@@ -301,7 +289,6 @@ local function updateESP()
                     if esp.Tracer then esp.Tracer.Visible = false end
                 end
             else
-                -- Hide if no character
                 if esp.Box then esp.Box.Visible = false end
                 if esp.NameLabel then esp.NameLabel.Visible = false end
                 if esp.DistanceLabel then esp.DistanceLabel.Visible = false end
@@ -309,7 +296,6 @@ local function updateESP()
                 if esp.Tracer then esp.Tracer.Visible = false end
             end
         else
-            -- Hide if should not show
             if esp.Box then esp.Box.Visible = false end
             if esp.NameLabel then esp.NameLabel.Visible = false end
             if esp.DistanceLabel then esp.DistanceLabel.Visible = false end
@@ -398,7 +384,6 @@ end
 
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(1)
-    -- Recreate ESP for all players after respawn
     for player, esp in pairs(espObjects) do
         pcall(function()
             esp.Box:Destroy()
@@ -417,7 +402,7 @@ local Window = Rayfield:CreateWindow({
     Name = "Advanced ESP",
     Icon = 0,
     LoadingTitle = "Advanced ESP",
-    LoadingSubtitle = "Working Version",
+    LoadingSubtitle = "Rayfield Edition",
     Theme = "Default",
     ConfigurationSaving = {
         Enabled = true,
@@ -456,7 +441,7 @@ MainTab:CreateToggle({
 MainTab:CreateSection("ESP Mode")
 
 MainTab:CreateButton({
-    Name = "👥 ALL PLAYERS",
+    Name = "All Players",
     Callback = function()
         espMode = "All"
         notify("Mode", "Showing ALL players", 2)
@@ -464,7 +449,7 @@ MainTab:CreateButton({
 })
 
 MainTab:CreateButton({
-    Name = "👥 TEAMMATES ONLY",
+    Name = "Teammates Only",
     Callback = function()
         espMode = "Team"
         notify("Mode", "Showing TEAMMATES only", 2)
@@ -472,7 +457,7 @@ MainTab:CreateButton({
 })
 
 MainTab:CreateButton({
-    Name = "⚔️ ENEMIES ONLY",
+    Name = "Enemies Only",
     Callback = function()
         espMode = "Enemy"
         notify("Mode", "Showing ENEMIES only", 2)
@@ -480,7 +465,7 @@ MainTab:CreateButton({
 })
 
 MainTab:CreateButton({
-    Name = "🎯 SPECIFIC PLAYER",
+    Name = "Specific Player",
     Callback = function()
         espMode = "Selected"
         notify("Mode", "Showing SELECTED player only", 2)
@@ -510,12 +495,12 @@ local VisualTab = Window:CreateTab("Visual", 4483362458)
 VisualTab:CreateSection("Display Toggles")
 
 VisualTab:CreateToggle({
-    Name = "Show Box ESP",
+    Name = "Show Box",
     CurrentValue = showBox,
     Flag = "ShowBox",
     Callback = function(value)
         showBox = value
-        notify("Box ESP", value and "ON" or "OFF", 1)
+        notify("Box", value and "ON" or "OFF", 1)
     end
 })
 
@@ -525,7 +510,7 @@ VisualTab:CreateToggle({
     Flag = "ShowName",
     Callback = function(value)
         showName = value
-        notify("Name Display", value and "ON" or "OFF", 1)
+        notify("Name", value and "ON" or "OFF", 1)
     end
 })
 
@@ -535,12 +520,12 @@ VisualTab:CreateToggle({
     Flag = "ShowDistance",
     Callback = function(value)
         showDistance = value
-        notify("Distance Display", value and "ON" or "OFF", 1)
+        notify("Distance", value and "ON" or "OFF", 1)
     end
 })
 
 VisualTab:CreateToggle({
-    Name = "Show Health Bar",
+    Name = "Show Health",
     CurrentValue = showHealth,
     Flag = "ShowHealth",
     Callback = function(value)
@@ -550,19 +535,19 @@ VisualTab:CreateToggle({
 })
 
 VisualTab:CreateToggle({
-    Name = "Show Tracer Line",
+    Name = "Show Tracer",
     CurrentValue = showTracer,
     Flag = "ShowTracer",
     Callback = function(value)
         showTracer = value
-        notify("Tracer Line", value and "ON" or "OFF", 1)
+        notify("Tracer", value and "ON" or "OFF", 1)
     end
 })
 
 VisualTab:CreateSection("Colors")
 
 VisualTab:CreateButton({
-    Name = "🟢 Team: Green",
+    Name = "Team: Green",
     Callback = function()
         teamColor = Color3.fromRGB(0, 255, 0)
         updateSettings()
@@ -571,7 +556,7 @@ VisualTab:CreateButton({
 })
 
 VisualTab:CreateButton({
-    Name = "🔵 Team: Blue",
+    Name = "Team: Blue",
     Callback = function()
         teamColor = Color3.fromRGB(0, 100, 255)
         updateSettings()
@@ -580,7 +565,7 @@ VisualTab:CreateButton({
 })
 
 VisualTab:CreateButton({
-    Name = "🟣 Team: Purple",
+    Name = "Team: Purple",
     Callback = function()
         teamColor = Color3.fromRGB(255, 0, 255)
         updateSettings()
@@ -589,7 +574,7 @@ VisualTab:CreateButton({
 })
 
 VisualTab:CreateButton({
-    Name = "🔴 Enemy: Red",
+    Name = "Enemy: Red",
     Callback = function()
         enemyColor = Color3.fromRGB(255, 0, 0)
         updateSettings()
@@ -598,7 +583,7 @@ VisualTab:CreateButton({
 })
 
 VisualTab:CreateButton({
-    Name = "🟠 Enemy: Orange",
+    Name = "Enemy: Orange",
     Callback = function()
         enemyColor = Color3.fromRGB(255, 100, 0)
         updateSettings()
@@ -607,7 +592,7 @@ VisualTab:CreateButton({
 })
 
 VisualTab:CreateButton({
-    Name = "⚪ Enemy: White",
+    Name = "Enemy: White",
     Callback = function()
         enemyColor = Color3.fromRGB(255, 255, 255)
         updateSettings()
@@ -616,11 +601,20 @@ VisualTab:CreateButton({
 })
 
 VisualTab:CreateButton({
-    Name = "⚪ Tracer: White",
+    Name = "Tracer: White",
     Callback = function()
         tracerColor = Color3.fromRGB(255, 255, 255)
         updateSettings()
         notify("Tracer Color", "White", 1)
+    end
+})
+
+VisualTab:CreateButton({
+    Name = "Tracer: Red",
+    Callback = function()
+        tracerColor = Color3.fromRGB(255, 0, 0)
+        updateSettings()
+        notify("Tracer Color", "Red", 1)
     end
 })
 
@@ -644,7 +638,7 @@ local SettingsTab = Window:CreateTab("Settings", 4483362458)
 SettingsTab:CreateSection("Distance")
 
 SettingsTab:CreateSlider({
-    Name = "Max ESP Distance",
+    Name = "Max Distance",
     Range = {100, 5000},
     Increment = 100,
     Suffix = "m",
@@ -664,16 +658,16 @@ InfoTab:CreateSection("About")
 InfoTab:CreateParagraph({
     Title = "Advanced ESP",
     Content = [[
-Version: 5.0 (Working)
+Version: 1.0
 
 FEATURES:
-✓ Box ESP
-✓ Name Display
-✓ Distance Display
-✓ Health Bar
-✓ Tracer Line
-✓ Team/Enemy Colors
-✓ Player Selection
+• Box ESP
+• Name Display
+• Distance Display
+• Health Bar
+• Tracer Line
+• Team/Enemy Colors
+• Player Selection
 
 MODES:
 • All Players
@@ -699,7 +693,7 @@ local function cleanup()
     espEnabled = false
     removeAllESP()
     pcall(function() espGui:Destroy() end)
-    getgenv().ESP_V5_LOADED = false
+    getgenv().ADVANCED_ESP_LOADED = false
     notify("ESP", "Unloaded!", 2)
 end
 
@@ -710,7 +704,6 @@ UserInputService.InputBegan:Connect(function(input)
 end)
 
 -- ========== INIT ==========
--- Create ESP for existing players
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
         createESP(player)
@@ -719,5 +712,4 @@ end
 
 notify("Advanced ESP", "Loaded! Press INSERT for menu", 3)
 print("=== Advanced ESP Loaded ===")
-print("ESP wird jetzt korrekt angezeigt!")
 print("Press INSERT for Rayfield menu")
