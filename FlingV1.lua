@@ -1,399 +1,246 @@
--- Touch Fling Script V2 - Rayfield GUI
--- Original by DuplexScripts
--- Added: Noclip, Fly, Player Teleport, ESP
+-- Invis Fling Script - Rayfield GUI Version
+-- Original by HilosHAX
+-- Converted to Rayfield GUI
 
-if getgenv().TOUCH_FLING_V2_LOADED then return end
-getgenv().TOUCH_FLING_V2_LOADED = true
+if getgenv().INVIS_FLING_LOADED then return end
+getgenv().INVIS_FLING_LOADED = true
 
 -- ========== LOAD RAYFIELD ==========
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/lzhenwei76-beep/RayfieldCopy/refs/heads/main/source.lua'))()
 
 -- ========== SERVICES ==========
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
-
--- ========== CREATE DETECTION DECAL ==========
-if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
-    local detection = Instance.new("Decal")
-    detection.Name = "juisdfj0i32i0eidsuf0iok"
-    detection.Parent = ReplicatedStorage
-end
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
 
 -- ========== VARIABLES ==========
--- Fling
-local flingActive = false
-local flingThread = nil
-local flingStrength = 10000
-local flingHeight = 10000
-local flingPulse = 0.1
-
--- Noclip
-local noclipActive = false
-local noclipConnection = nil
-
--- Fly
-local flyActive = false
-local flySpeed = 50
+local flingEnabled = false
+local flingPower = 5000
+local flySpeed = 100
 local flyBodyVelocity = nil
 local flyConnection = nil
+local flingConnection = nil
+local currentCamera = workspace.CurrentCamera
 
--- ESP
-local espActive = false
-local espObjects = {}
-local espColor = Color3.fromRGB(255, 0, 0)
-local teamCheck = false
+-- Power levels
+local powerLevels = {5000, 10000, 20000, 30000, 50000}
+local powerIndex = 1
 
--- Player List
-local playerList = {}
-local selectedPlayer = nil
-
--- ========== UPDATE PLAYER LIST ==========
-local function updatePlayerList()
-    playerList = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            table.insert(playerList, player.Name)
-        end
-    end
-end
-
-Players.PlayerAdded:Connect(updatePlayerList)
-Players.PlayerRemoving:Connect(updatePlayerList)
-updatePlayerList()
-
--- ========== NOTIFICATION HELPER ==========
+-- ========== HELPER FUNCTIONS ==========
 local function notify(title, content, duration)
     pcall(function()
-        Rayfield:Notify({Title = title, Content = content, Duration = duration or 2})
+        Rayfield:Notify({
+            Title = title,
+            Content = content,
+            Duration = duration or 2
+        })
     end)
 end
 
--- ========== FLING FUNCTION ==========
-local function fling()
-    local lp = Players.LocalPlayer
-    local c, hrp, vel, movel = nil, nil, nil, flingPulse
-
-    while flingActive do
-        RunService.Heartbeat:Wait()
-        c = lp.Character
-        hrp = c and c:FindFirstChild("HumanoidRootPart")
-
-        if hrp then
-            vel = hrp.Velocity
-            hrp.Velocity = vel * flingStrength + Vector3.new(0, flingHeight, 0)
-            RunService.RenderStepped:Wait()
-            hrp.Velocity = vel
-            RunService.Stepped:Wait()
-            hrp.Velocity = vel + Vector3.new(0, movel, 0)
-            movel = -movel
-        end
-    end
-end
-
-local function toggleFling()
-    flingActive = not flingActive
-    
-    if flingActive then
-        if flyActive then toggleFly() end
-        flingThread = coroutine.create(fling)
-        coroutine.resume(flingThread)
-        notify("Fling", "✓ ENABLED", 2)
-    else
-        notify("Fling", "✗ DISABLED", 2)
-    end
-end
-
--- ========== NOCLIP FUNCTION ==========
-local function setNoclip(state)
-    local char = LocalPlayer.Character
+-- ========== INVISIBILITY FUNCTIONS ==========
+local function makeInvisible(char)
     if not char then return end
-    
     for _, part in ipairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
-            part.CanCollide = not state
+            part.Transparency = 1
+            part.CanCollide = false
+        elseif part:IsA("Decal") or part:IsA("Texture") then
+            part.Transparency = 1
         end
     end
 end
 
-local function toggleNoclip()
-    noclipActive = not noclipActive
-    setNoclip(noclipActive)
-    
-    if noclipActive then
-        if noclipConnection then noclipConnection:Disconnect() end
-        noclipConnection = LocalPlayer.CharacterAdded:Connect(function()
-            if noclipActive then setNoclip(true) end
-        end)
-        notify("Noclip", "✓ ENABLED", 2)
-    else
-        if noclipConnection then noclipConnection:Disconnect() end
-        notify("Noclip", "✗ DISABLED", 2)
+local function makeVisible(char)
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Transparency = 0
+            part.CanCollide = true
+        elseif part:IsA("Decal") or part:IsA("Texture") then
+            part.Transparency = 0
+        end
     end
 end
 
--- ========== FLY FUNCTION ==========
-local function startFly()
-    local char = LocalPlayer.Character
-    if not char then return end
+-- ========== FLY FUNCTIONS ==========
+local function startFlying()
+    if not hrp or not hrp.Parent then return end
     
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local humanoid = char:FindFirstChild("Humanoid")
-    if not hrp or not humanoid then return end
+    -- Remove existing BodyVelocity
+    if hrp:FindFirstChild("FlyForce") then
+        hrp.FlyForce:Destroy()
+    end
     
     flyBodyVelocity = Instance.new("BodyVelocity")
-    flyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
     flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    flyBodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    flyBodyVelocity.Name = "FlyForce"
     flyBodyVelocity.Parent = hrp
     
-    humanoid.PlatformStand = true
-    humanoid.AutoRotate = false
-    
-    flyConnection = RunService.RenderStepped:Connect(function()
-        if not flyActive or not hrp or not hrp.Parent then return end
-        
-        local cam = Workspace.CurrentCamera
-        local move = Vector3.new(0, 0, 0)
-        
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + cam.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - cam.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - cam.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + cam.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Q) then move = move + Vector3.new(0, 1, 0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.E) then move = move - Vector3.new(0, 1, 0) end
-        
-        if move.Magnitude > 0 then
-            flyBodyVelocity.Velocity = move.Unit * flySpeed
-        else
-            flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    -- Flying movement
+    flyConnection = RunService.Heartbeat:Connect(function()
+        if flingEnabled and hrp and hrp.Parent and flyBodyVelocity then
+            local moveVec = Vector3.new()
+            local cam = workspace.CurrentCamera
+            
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                moveVec = moveVec + cam.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                moveVec = moveVec - cam.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                moveVec = moveVec - cam.CFrame.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                moveVec = moveVec + cam.CFrame.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Q) then
+                moveVec = moveVec + Vector3.new(0, 1, 0)
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.E) then
+                moveVec = moveVec - Vector3.new(0, 1, 0)
+            end
+            
+            if moveVec.Magnitude > 0 then
+                flyBodyVelocity.Velocity = moveVec.Unit * flySpeed
+            else
+                flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            end
         end
     end)
 end
 
-local function stopFly()
-    if flyConnection then flyConnection:Disconnect() end
-    if flyBodyVelocity then flyBodyVelocity:Destroy() end
+local function stopFlying()
+    if flyConnection then
+        flyConnection:Disconnect()
+        flyConnection = nil
+    end
+    if hrp and hrp:FindFirstChild("FlyForce") then
+        hrp.FlyForce:Destroy()
+    end
+    flyBodyVelocity = nil
+end
+
+-- ========== FLING FUNCTIONS ==========
+local function startFling()
+    if not hrp or not hrp.Parent then return end
     
-    local char = LocalPlayer.Character
-    if char then
-        local humanoid = char:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.PlatformStand = false
-            humanoid.AutoRotate = true
+    -- Fling rotation
+    flingConnection = RunService.Heartbeat:Connect(function()
+        if flingEnabled and hrp and hrp.Parent then
+            hrp.AssemblyAngularVelocity = Vector3.new(0, flingPower, 0)
+            hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         end
+    end)
+end
+
+local function stopFling()
+    if flingConnection then
+        flingConnection:Disconnect()
+        flingConnection = nil
+    end
+    if hrp then
+        hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
     end
 end
 
-local function toggleFly()
-    if flingActive then toggleFling() end
+-- ========== TOGGLE FLING ==========
+local function toggleFling()
+    flingEnabled = not flingEnabled
     
-    flyActive = not flyActive
-    
-    if flyActive then
-        startFly()
-        notify("Fly", "✓ ENABLED (WASD | Q/E)", 2)
+    if flingEnabled then
+        -- Make character invisible
+        makeInvisible(character)
+        
+        -- Start flying and flinging
+        startFlying()
+        startFling()
+        
+        -- Handle character respawn
+        LocalPlayer.CharacterAdded:Connect(function(newChar)
+            character = newChar
+            hrp = character:WaitForChild("HumanoidRootPart")
+            if flingEnabled then
+                task.wait(0.5)
+                makeInvisible(character)
+                startFlying()
+                startFling()
+            end
+        end)
+        
+        notify("Invis Fling", "✓ ENABLED (Power: " .. flingPower .. ")", 2)
     else
-        stopFly()
-        notify("Fly", "✗ DISABLED", 2)
+        -- Make character visible
+        makeVisible(character)
+        
+        -- Stop flying and flinging
+        stopFlying()
+        stopFling()
+        
+        notify("Invis Fling", "✗ DISABLED", 2)
     end
 end
 
--- ========== TELEPORT FUNCTION ==========
-local function teleportToPlayer(playerName)
-    local target = Players:FindFirstChild(playerName)
-    if not target then notify("Teleport", "Player not found!", 2); return end
-    
-    local targetChar = target.Character
-    local localChar = LocalPlayer.Character
-    if not targetChar or not localChar then notify("Teleport", "Character not found!", 2); return end
-    
-    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-    local localRoot = localChar:FindFirstChild("HumanoidRootPart")
-    if not targetRoot or not localRoot then notify("Teleport", "Character not ready!", 2); return end
-    
-    localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 5)
-    notify("Teleport", "Teleported to " .. target.Name, 2)
+-- ========== SET FLING POWER ==========
+local function setFlingPower(power)
+    flingPower = power
+    notify("Fling Power", "Set to " .. flingPower, 1)
 end
 
--- ========== ESP FUNCTIONS ==========
-local function createESP(player)
-    if espObjects[player] then return end
-    
-    local char = player.Character
-    if not char then return end
-    
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
-    -- Box
-    local box = Instance.new("BoxHandleAdornment")
-    box.Adornee = hrp
-    box.Size = Vector3.new(4, 5, 2)
-    box.Color3 = espColor
-    box.Transparency = 0.5
-    box.ZIndex = 0
-    box.AlwaysOnTop = true
-    box.Parent = hrp
-    
-    -- Billboard for Name
-    local billboard = Instance.new("BillboardGui")
-    billboard.Adornee = hrp
-    billboard.Size = UDim2.new(0, 200, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 3, 0)
-    billboard.Parent = hrp
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 1, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.TextStrokeTransparency = 0.3
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextSize = 14
-    nameLabel.Text = player.Name
-    nameLabel.Parent = billboard
-    
-    -- Health Bar
-    local healthBar = Instance.new("Frame")
-    healthBar.Size = UDim2.new(1, 0, 0.2, 0)
-    healthBar.Position = UDim2.new(0, 0, 1, 2)
-    healthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-    healthBar.BorderSizePixel = 0
-    healthBar.Parent = billboard
-    
-    espObjects[player] = {
-        Box = box,
-        Billboard = billboard,
-        HealthBar = healthBar,
-        NameLabel = nameLabel
-    }
-    
-    -- Update health
-    local humanoid = char:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-            if espObjects[player] and espObjects[player].HealthBar and humanoid then
-                local percent = humanoid.Health / humanoid.MaxHealth
-                espObjects[player].HealthBar.Size = UDim2.new(percent, 0, 0.2, 0)
-                espObjects[player].HealthBar.BackgroundColor3 = percent > 0.6 and Color3.fromRGB(0, 255, 0) or percent > 0.3 and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(255, 0, 0)
-            end
-        end)
-    end
+local function cycleFlingPower()
+    powerIndex = powerIndex % #powerLevels + 1
+    flingPower = powerLevels[powerIndex]
+    notify("Fling Power", "Set to " .. flingPower, 1)
+    return flingPower
 end
 
-local function removeESP(player)
-    if espObjects[player] then
-        pcall(function()
-            espObjects[player].Box:Destroy()
-            espObjects[player].Billboard:Destroy()
-        end)
-        espObjects[player] = nil
-    end
-end
-
-local function updateESP()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            if espActive then
-                if teamCheck and player.Team == LocalPlayer.Team then
-                    removeESP(player)
-                else
-                    createESP(player)
-                end
-            else
-                removeESP(player)
-            end
-        end
-    end
-end
-
-local function toggleESP()
-    espActive = not espActive
-    
-    if espActive then
-        updateESP()
-        -- Connect character added event
-        Players.PlayerAdded:Connect(function(player)
-            if espActive then
-                player.CharacterAdded:Connect(function()
-                    task.wait(1)
-                    updateESP()
-                end)
-            end
-        end)
-        notify("ESP", "✓ ENABLED", 2)
-    else
-        for player, _ in pairs(espObjects) do
-            removeESP(player)
-        end
-        notify("ESP", "✗ DISABLED", 2)
-    end
-end
-
--- Update ESP when characters change
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    updateESP()
-end)
-
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        player.CharacterAdded:Connect(function()
-            task.wait(1)
-            updateESP()
-        end)
-    end
-end
-
--- ========== FLY SPEED SETTER ==========
+-- ========== SET FLY SPEED ==========
 local function setFlySpeed(speed)
     flySpeed = speed
     notify("Fly Speed", "Set to " .. flySpeed, 1)
 end
 
--- ========== FLING STRENGTH SETTER ==========
-local function setFlingStrength(strength)
-    flingStrength = strength
-    notify("Fling Strength", "Set to " .. flingStrength, 1)
-end
+-- ========== BLUR EFFECT FUNCTIONS ==========
+local blurEffect = nil
 
-local function setFlingHeight(height)
-    flingHeight = height
-    notify("Fling Height", "Set to " .. flingHeight, 1)
-end
-
-local function setFlingPulse(pulse)
-    flingPulse = pulse
-    notify("Fling Pulse", "Set to " .. flingPulse .. "s", 1)
-end
-
--- ========== ESP COLOR SETTER ==========
-local function setESPColor(colorName, colorValue)
-    espColor = colorValue
-    for player, esp in pairs(espObjects) do
-        pcall(function()
-            esp.Box.Color3 = espColor
-        end)
+local function createBlurEffect()
+    if not Lighting:FindFirstChild("InvisFlingBlur") then
+        blurEffect = Instance.new("BlurEffect")
+        blurEffect.Name = "InvisFlingBlur"
+        blurEffect.Size = 0
+        blurEffect.Parent = Lighting
+    else
+        blurEffect = Lighting.InvisFlingBlur
     end
-    notify("ESP Color", "Set to " .. colorName, 1)
+end
+
+local function setBlur(enabled)
+    createBlurEffect()
+    if enabled then
+        blurEffect.Size = 10
+    else
+        blurEffect.Size = 0
+    end
 end
 
 -- ========== RAYFIELD GUI ==========
 local Window = Rayfield:CreateWindow({
-    Name = "Touch Fling V2",
+    Name = "Invis Fling",
     Icon = 0,
-    LoadingTitle = "Touch Fling V2",
-    LoadingSubtitle = "By DuplexScripts + Extras",
+    LoadingTitle = "Invis Fling",
+    LoadingSubtitle = "By HilosHAX",
     Theme = "Default",
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "TouchFlingV2",
+        FolderName = "InvisFling",
         FileName = "Config"
     },
     KeySystem = false
@@ -402,73 +249,36 @@ local Window = Rayfield:CreateWindow({
 -- ========== MAIN TAB ==========
 local MainTab = Window:CreateTab("Main", 4483362458)
 
-MainTab:CreateSection("Core Features")
+MainTab:CreateSection("Control")
 
+-- Fling Toggle Button
 MainTab:CreateButton({
-    Name = flingActive and "🟢 FLING - ON" or "🔴 FLING - OFF",
+    Name = flingEnabled and "🟢 DISABLE INVIS FLING" or "🔴 ENABLE INVIS FLING",
     Callback = function()
         toggleFling()
-        local btn = Rayfield:GetButton("FlingButton")
-        if btn then btn:Set(flingActive and "🟢 FLING - ON" or "🔴 FLING - OFF") end
+        local btn = Rayfield:GetButton("FlingToggle")
+        if btn then
+            btn:Set(flingEnabled and "🟢 DISABLE INVIS FLING" or "🔴 ENABLE INVIS FLING")
+        end
     end,
-    Flag = "FlingButton"
+    Flag = "FlingToggle"
 })
 
-MainTab:CreateButton({
-    Name = noclipActive and "🟢 NOCLIP - ON" or "🔴 NOCLIP - OFF",
-    Callback = function()
-        toggleNoclip()
-        local btn = Rayfield:GetButton("NoclipButton")
-        if btn then btn:Set(noclipActive and "🟢 NOCLIP - ON" or "🔴 NOCLIP - OFF") end
-    end,
-    Flag = "NoclipButton"
-})
+-- Status Display
+MainTab:CreateParagraph({
+    Title = "Status",
+    Content = string.format([[
+Fling Status: %s
+Fling Power: %d
+Fly Speed: %d
 
-MainTab:CreateButton({
-    Name = flyActive and "🟢 FLY - ON" or "🔴 FLY - OFF",
-    Callback = function()
-        toggleFly()
-        local btn = Rayfield:GetButton("FlyButton")
-        if btn then btn:Set(flyActive and "🟢 FLY - ON" or "🔴 FLY - OFF") end
-    end,
-    Flag = "FlyButton"
-})
-
-MainTab:CreateButton({
-    Name = espActive and "🟢 ESP - ON" or "🔴 ESP - OFF",
-    Callback = function()
-        toggleESP()
-        local btn = Rayfield:GetButton("ESPButton")
-        if btn then btn:Set(espActive and "🟢 ESP - ON" or "🔴 ESP - OFF") end
-    end,
-    Flag = "ESPButton"
-})
-
--- ========== TELEPORT TAB ==========
-local TeleportTab = Window:CreateTab("Teleport", 4483362458)
-
-TeleportTab:CreateSection("Player Teleport")
-
--- Dynamic player buttons
-local function refreshTeleportButtons()
-    updatePlayerList()
-    for _, playerName in ipairs(playerList) do
-        TeleportTab:CreateButton({
-            Name = "📍 Teleport to " .. playerName,
-            Callback = function() teleportToPlayer(playerName) end
-        })
-    end
-end
-
-refreshTeleportButtons()
-
--- Refresh button
-TeleportTab:CreateButton({
-    Name = "🔄 Refresh Player List",
-    Callback = function()
-        refreshTeleportButtons()
-        notify("Teleport", "Player list refreshed!", 1)
-    end
+Controls:
+• WASD - Move
+• Q - Fly Up
+• E - Fly Down
+]], flingEnabled and "✅ ACTIVE" or "❌ INACTIVE",
+   flingPower,
+   flySpeed)
 })
 
 -- ========== SETTINGS TAB ==========
@@ -477,31 +287,65 @@ local SettingsTab = Window:CreateTab("Settings", 4483362458)
 -- Fling Settings
 SettingsTab:CreateSection("Fling Settings")
 
+-- Power Slider
 SettingsTab:CreateSlider({
-    Name = "Fling Strength",
+    Name = "Fling Power",
     Range = {1000, 100000},
     Increment = 1000,
-    CurrentValue = flingStrength,
-    Flag = "StrengthSlider",
-    Callback = setFlingStrength
+    CurrentValue = flingPower,
+    Flag = "PowerSlider",
+    Callback = setFlingPower
 })
 
-SettingsTab:CreateSlider({
-    Name = "Fling Height",
-    Range = {1000, 50000},
-    Increment = 1000,
-    CurrentValue = flingHeight,
-    Flag = "HeightSlider",
-    Callback = setFlingHeight
+-- Power Presets
+SettingsTab:CreateSection("Power Presets")
+
+SettingsTab:CreateButton({
+    Name = "💪 5,000 (Normal)",
+    Callback = function()
+        setFlingPower(5000)
+        Rayfield:Set("PowerSlider", 5000)
+    end
 })
 
-SettingsTab:CreateSlider({
-    Name = "Pulse Speed",
-    Range = {0.01, 1},
-    Increment = 0.01,
-    CurrentValue = flingPulse,
-    Flag = "PulseSlider",
-    Callback = setFlingPulse
+SettingsTab:CreateButton({
+    Name = "⚡ 10,000 (Strong)",
+    Callback = function()
+        setFlingPower(10000)
+        Rayfield:Set("PowerSlider", 10000)
+    end
+})
+
+SettingsTab:CreateButton({
+    Name = "🔥 20,000 (Mega)",
+    Callback = function()
+        setFlingPower(20000)
+        Rayfield:Set("PowerSlider", 20000)
+    end
+})
+
+SettingsTab:CreateButton({
+    Name = "💥 30,000 (Ultra)",
+    Callback = function()
+        setFlingPower(30000)
+        Rayfield:Set("PowerSlider", 30000)
+    end
+})
+
+SettingsTab:CreateButton({
+    Name = "🌪️ 50,000 (Insane)",
+    Callback = function()
+        setFlingPower(50000)
+        Rayfield:Set("PowerSlider", 50000)
+    end
+})
+
+SettingsTab:CreateButton({
+    Name = "🔄 Cycle Power (Click)",
+    Callback = function()
+        local newPower = cycleFlingPower()
+        Rayfield:Set("PowerSlider", newPower)
+    end
 })
 
 -- Fly Settings
@@ -509,88 +353,11 @@ SettingsTab:CreateSection("Fly Settings")
 
 SettingsTab:CreateSlider({
     Name = "Fly Speed",
-    Range = {10, 500},
+    Range = {50, 500},
     Increment = 10,
     CurrentValue = flySpeed,
     Flag = "FlySpeedSlider",
     Callback = setFlySpeed
-})
-
--- ESP Settings
-SettingsTab:CreateSection("ESP Settings")
-
-SettingsTab:CreateToggle({
-    Name = "Team Check (Hide Teammates)",
-    CurrentValue = teamCheck,
-    Flag = "TeamCheck",
-    Callback = function(value)
-        teamCheck = value
-        if espActive then
-            updateESP()
-        end
-        notify("ESP", "Team check " .. (value and "ON" or "OFF"), 1)
-    end
-})
-
-SettingsTab:CreateButton({
-    Name = "🔴 ESP Color: Red",
-    Callback = function() setESPColor("Red", Color3.fromRGB(255, 0, 0)) end
-})
-
-SettingsTab:CreateButton({
-    Name = "🟢 ESP Color: Green",
-    Callback = function() setESPColor("Green", Color3.fromRGB(0, 255, 0)) end
-})
-
-SettingsTab:CreateButton({
-    Name = "🔵 ESP Color: Blue",
-    Callback = function() setESPColor("Blue", Color3.fromRGB(0, 100, 255)) end
-})
-
-SettingsTab:CreateButton({
-    Name = "🟡 ESP Color: Yellow",
-    Callback = function() setESPColor("Yellow", Color3.fromRGB(255, 255, 0)) end
-})
-
-SettingsTab:CreateButton({
-    Name = "🟣 ESP Color: Purple",
-    Callback = function() setESPColor("Purple", Color3.fromRGB(255, 0, 255)) end
-})
-
--- Presets
-SettingsTab:CreateSection("Presets")
-
-SettingsTab:CreateButton({
-    Name = "💪 Normal Fling (10k/10k)",
-    Callback = function()
-        setFlingStrength(10000)
-        setFlingHeight(10000)
-        Rayfield:Set("StrengthSlider", 10000)
-        Rayfield:Set("HeightSlider", 10000)
-        notify("Preset", "Normal Fling loaded!", 2)
-    end
-})
-
-SettingsTab:CreateButton({
-    Name = "🚀 Mega Fling (50k/30k)",
-    Callback = function()
-        setFlingStrength(50000)
-        setFlingHeight(30000)
-        Rayfield:Set("StrengthSlider", 50000)
-        Rayfield:Set("HeightSlider", 30000)
-        notify("Preset", "Mega Fling loaded!", 2)
-    end
-})
-
-SettingsTab:CreateButton({
-    Name = "💥 Ultra Fling (100k/50k)",
-    Callback = function()
-        setFlingStrength(100000)
-        setFlingHeight(50000)
-        Rayfield:Set("StrengthSlider", 100000)
-        Rayfield:Set("HeightSlider", 50000)
-        notify("Preset", "Ultra Fling loaded!", 2)
-    end
 })
 
 -- ========== INFO TAB ==========
@@ -599,28 +366,33 @@ local InfoTab = Window:CreateTab("Info", 4483362458)
 InfoTab:CreateSection("About")
 
 InfoTab:CreateParagraph({
-    Title = "Touch Fling V2",
+    Title = "Invis Fling Script",
     Content = [[
 Version: 2.0 (Rayfield Edition)
-Original by: DuplexScripts
-Added Features: Noclip, Fly, Teleport, ESP
+Original by: HilosHAX
+
+DESCRIPTION:
+This script makes you invisible and allows you to fling yourself across the map at high speeds!
 
 FEATURES:
-✓ Touch Fling (Customizable)
-✓ Noclip (Toggle)
-✓ Fly (WASD + Q/E)
-✓ Player Teleport
-✓ ESP (Box + Name + Health)
-✓ Color Customization
+✓ Invisibility (Parts + Decals)
+✓ Fling with adjustable power
+✓ Fly with WASD + Q/E
+✓ Blur effect when hovering GUI (Original feature)
+✓ Customizable fly speed
+
+HOW TO USE:
+1. Press "ENABLE INVIS FLING"
+2. You become invisible and start flinging
+3. Use WASD to fly around
+4. Use Q/E to go up/down
+5. Adjust power for more fling strength
 
 CONTROLS:
 • INSERT - Open/Close Menu
-• F - Toggle Fling
-• WASD + Q/E - Fly (when enabled)
-
-WARNING:
-May cause lag on some devices
-Use at your own risk
+• WASD - Fly Movement
+• Q - Fly Up
+• E - Fly Down
 ]]
 })
 
@@ -629,63 +401,83 @@ InfoTab:CreateSection("Credits")
 InfoTab:CreateParagraph({
     Title = "Credits",
     Content = [[
-Original Script: DuplexScripts
-Rayfield Conversion & Extras: Request
+Original Script: HilosHAX
+Rayfield Conversion: Request
 Version: 2.0
 
-Subscribe to DuplexScripts!
+Sound effect included (click sound)
+Blur effect on GUI hover
 ]]
 })
 
--- ========== KEYBINDS ==========
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    
-    -- F key for Fling
-    if input.KeyCode == Enum.KeyCode.F then
-        toggleFling()
-        local btn = Rayfield:GetButton("FlingButton")
-        if btn then btn:Set(flingActive and "🟢 FLING - ON" or "🔴 FLING - OFF") end
-    end
-    
-    -- N key for Noclip
-    if input.KeyCode == Enum.KeyCode.N then
-        toggleNoclip()
-        local btn = Rayfield:GetButton("NoclipButton")
-        if btn then btn:Set(noclipActive and "🟢 NOCLIP - ON" or "🔴 NOCLIP - OFF") end
-    end
-    
-    -- X key for Fly
-    if input.KeyCode == Enum.KeyCode.X then
-        toggleFly()
-        local btn = Rayfield:GetButton("FlyButton")
-        if btn then btn:Set(flyActive and "🟢 FLY - ON" or "🔴 FLY - OFF") end
-    end
-    
-    -- E key for ESP
-    if input.KeyCode == Enum.KeyCode.End then
-        toggleESP()
-        local btn = Rayfield:GetButton("ESPButton")
-        if btn then btn:Set(espActive and "🟢 ESP - ON" or "🔴 ESP - OFF") end
+-- ========== BLUR EFFECT ON HOVER (Original Feature) ==========
+createBlurEffect()
+
+-- Create a fake frame for hover detection (since Rayfield doesn't have direct hover)
+local hoverFrame = Instance.new("Frame")
+hoverFrame.Size = UDim2.new(0, 0, 0, 0)
+hoverFrame.BackgroundTransparency = 1
+hoverFrame.Parent = CoreGui
+
+-- Track if mouse is over Rayfield window (approximate)
+local function onWindowHover(isHovering)
+    setBlur(isHovering)
+end
+
+-- Simple hover detection using mouse position
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mousePos = UserInputService:GetMouseLocation()
+        -- Check if mouse is over Rayfield window (approximate area)
+        local rayfieldWindows = CoreGui:FindFirstChild("Rayfield")
+        if rayfieldWindows then
+            local window = rayfieldWindows:FindFirstChild("MainFrame")
+            if window and window.AbsolutePosition then
+                local pos = window.AbsolutePosition
+                local size = window.AbsoluteSize
+                local isOver = mousePos.X >= pos.X and mousePos.X <= pos.X + size.X and
+                              mousePos.Y >= pos.Y and mousePos.Y <= pos.Y + size.Y
+                setBlur(isOver)
+            end
+        end
     end
 end)
 
--- ========== CLEANUP ==========
+-- ========== CHARACTER RESPAWN HANDLER ==========
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    hrp = character:WaitForChild("HumanoidRootPart")
+    
+    if flingEnabled then
+        task.wait(0.5)
+        makeInvisible(character)
+        startFlying()
+        startFling()
+    end
+end)
+
+-- ========== CLEANUP ON UNLOAD ==========
 local function cleanup()
-    flingActive = false
-    flyActive = false
-    noclipActive = false
-    espActive = false
+    flingEnabled = false
     
-    if flyConnection then flyConnection:Disconnect() end
-    if noclipConnection then noclipConnection:Disconnect() end
+    stopFlying()
+    stopFling()
     
-    for player, _ in pairs(espObjects) do
-        removeESP(player)
+    if character then
+        makeVisible(character)
     end
     
-    getgenv().TOUCH_FLING_V2_LOADED = false
-    notify("Touch Fling V2", "Script unloaded!", 2)
+    if blurEffect then
+        blurEffect:Destroy()
+    end
+    
+    if hrp then
+        hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    end
+    
+    getgenv().INVIS_FLING_LOADED = false
+    notify("Invis Fling", "Script unloaded!", 2)
 end
 
 UserInputService.InputBegan:Connect(function(input)
@@ -694,9 +486,49 @@ UserInputService.InputBegan:Connect(function(input)
     end
 end)
 
--- ========== INIT ==========
-notify("Touch Fling V2", "Loaded! Press INSERT for menu | F=Fling | N=Noclip | X=Fly", 5)
-print("=== Touch Fling V2 Loaded ===")
-print("Features: Fling, Noclip, Fly (WASD+Q/E), Teleport, ESP")
+-- ========== KEYBINDS ==========
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    -- F key to toggle fling
+    if input.KeyCode == Enum.KeyCode.F then
+        toggleFling()
+        local btn = Rayfield:GetButton("FlingToggle")
+        if btn then
+            btn:Set(flingEnabled and "🟢 DISABLE INVIS FLING" or "🔴 ENABLE INVIS FLING")
+        end
+    end
+    
+    -- R key to cycle power
+    if input.KeyCode == Enum.KeyCode.R then
+        local newPower = cycleFlingPower()
+        Rayfield:Set("PowerSlider", newPower)
+    end
+end)
+
+-- ========== CLICK SOUND (Original Feature) ==========
+local clickSound = Instance.new("Sound")
+clickSound.SoundId = "rbxassetid://9118828560"
+clickSound.Volume = 2
+clickSound.Parent = CoreGui
+
+local function playClickSound()
+    pcall(function()
+        clickSound:Play()
+    end)
+end
+
+-- Override button clicks to play sound (optional)
+-- This will play sound when Rayfield buttons are clicked
+local oldNotify = Rayfield.Notify
+Rayfield.Notify = function(...)
+    playClickSound()
+    return oldNotify(...)
+end
+
+-- ========== INITIAL NOTIFICATION ==========
+notify("Invis Fling", "Loaded! Press INSERT for menu | F = Toggle | R = Cycle Power", 5)
+print("=== Invis Fling Script Loaded ===")
+print("Original by: HilosHAX")
 print("Press INSERT for Rayfield menu")
-print("Keybinds: F=Fling | N=Noclip | X=Fly | End=ESP")
+print("Keybinds: F = Toggle Fling | R = Cycle Power | WASD+Q/E = Fly")
