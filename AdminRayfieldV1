@@ -1,997 +1,1295 @@
--- Infinite Yield FE v6.4 - Complete Rayfield Conversion
--- All 200+ commands fully functional
--- Original by Edge, Zwolf, Moon, Toon, Peyton, ATP
+-- Infinite Yield FE V3 - Rayfield Conversion
+-- WARNING: This script is outdated and may be detected!
+-- Version 3.0 - With Risk Warning
 
-if IY_LOADED and not _G.IY_DEBUG then
-    return
-end
+if getgenv().IY_V3_LOADED then return end
+getgenv().IY_V3_LOADED = true
 
-pcall(function() getgenv().IY_LOADED = true end)
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- ========== COMPATIBILITY LAYER ==========
-function missing(t, f, fallback)
-    if type(f) == t then return f end
-    return fallback
+-- ========== WARNING POPUP ==========
+local WarningGui = Instance.new("ScreenGui")
+WarningGui.Name = "IYV3_Warning"
+WarningGui.ResetOnSpawn = false
+WarningGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+WarningGui.DisplayOrder = 999
+
+pcall(function() WarningGui.Parent = game:GetService("CoreGui") end)
+if not WarningGui.Parent then
+    WarningGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 end
 
-cloneref = missing("function", cloneref, function(...) return ... end)
-sethidden = missing("function", sethiddenproperty or set_hidden_property or set_hidden_prop)
-gethidden = missing("function", gethiddenproperty or get_hidden_property or get_hidden_prop)
-queueteleport = missing("function", queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport))
-httprequest = missing("function", request or http_request or (syn and syn.request) or (http and http.request) or (fluxus and fluxus.request))
-everyClipboard = missing("function", setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set))
-firetouchinterest = missing("function", firetouchinterest)
-waxwritefile, waxreadfile = writefile, readfile
-writefile = missing("function", waxwritefile) and function(file, data, safe)
-    if safe == true then return pcall(waxwritefile, file, data) end
-    waxwritefile(file, data)
-end
-readfile = missing("function", waxreadfile) and function(file, safe)
-    if safe == true then return pcall(waxreadfile, file) end
-    return waxreadfile(file)
-end
-isfile = missing("function", isfile, readfile and function(file)
-    local success, result = pcall(function() return readfile(file) end)
-    return success and result ~= nil and result ~= ""
+-- Warning Frame
+local WarningFrame = Instance.new("Frame")
+WarningFrame.Name = "WarningFrame"
+WarningFrame.Size = UDim2.new(0, 500, 0, 300)
+WarningFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
+WarningFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+WarningFrame.BackgroundTransparency = 0.05
+WarningFrame.BorderSizePixel = 0
+WarningFrame.ClipsDescendants = true
+WarningFrame.Parent = WarningGui
+
+-- Glow effect
+local WarningStroke = Instance.new("UIStroke")
+WarningStroke.Color = Color3.fromRGB(255, 50, 50)
+WarningStroke.Thickness = 3
+WarningStroke.Transparency = 0.3
+WarningStroke.Parent = WarningFrame
+
+local WarningCorner = Instance.new("UICorner")
+WarningCorner.CornerRadius = UDim.new(0, 12)
+WarningCorner.Parent = WarningFrame
+
+-- Header
+local WarningHeader = Instance.new("Frame")
+WarningHeader.Size = UDim2.new(1, 0, 0, 50)
+WarningHeader.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+WarningHeader.BackgroundTransparency = 0.15
+WarningHeader.BorderSizePixel = 0
+WarningHeader.Parent = WarningFrame
+
+local WarningIcon = Instance.new("TextLabel")
+WarningIcon.Size = UDim2.new(0, 40, 1, 0)
+WarningIcon.Position = UDim2.new(0, 10, 0, 0)
+WarningIcon.BackgroundTransparency = 1
+WarningIcon.Font = Enum.Font.GothamBold
+WarningIcon.TextSize = 24
+WarningIcon.Text = "⚠️"
+WarningIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+WarningIcon.TextXAlignment = Enum.TextXAlignment.Center
+WarningIcon.Parent = WarningHeader
+
+local WarningTitle = Instance.new("TextLabel")
+WarningTitle.Size = UDim2.new(1, -60, 1, 0)
+WarningTitle.Position = UDim2.new(0, 60, 0, 0)
+WarningTitle.BackgroundTransparency = 1
+WarningTitle.Font = Enum.Font.GothamBold
+WarningTitle.TextSize = 18
+WarningTitle.Text = "INFINITE YIELD V3 - OUTDATED"
+WarningTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+WarningTitle.TextXAlignment = Enum.TextXAlignment.Left
+WarningTitle.Parent = WarningHeader
+
+-- Warning Content
+local WarningContent = Instance.new("Frame")
+WarningContent.Size = UDim2.new(1, -20, 1, -70)
+WarningContent.Position = UDim2.new(0, 10, 0, 60)
+WarningContent.BackgroundTransparency = 1
+WarningContent.Parent = WarningFrame
+
+-- Risk Message
+local RiskLabel = Instance.new("TextLabel")
+RiskLabel.Size = UDim2.new(1, 0, 0, 60)
+RiskLabel.Position = UDim2.new(0, 0, 0, 0)
+RiskLabel.BackgroundTransparency = 1
+RiskLabel.Font = Enum.Font.GothamBold
+RiskLabel.TextSize = 16
+RiskLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+RiskLabel.Text = "🔴 HIGH RISK OF BAN!"
+RiskLabel.TextXAlignment = Enum.TextXAlignment.Center
+RiskLabel.Parent = WarningContent
+
+local RiskDesc = Instance.new("TextLabel")
+RiskDesc.Size = UDim2.new(1, 0, 0, 80)
+RiskDesc.Position = UDim2.new(0, 0, 0, 45)
+RiskDesc.BackgroundTransparency = 1
+RiskDesc.Font = Enum.Font.SourceSans
+RiskDesc.TextSize = 14
+RiskDesc.TextColor3 = Color3.fromRGB(200, 200, 200)
+RiskDesc.Text = "This script is outdated and may be detected by Roblox's anti-cheat.\nUsing this script puts your account at significant risk of being banned.\nProceed at your own risk!"
+RiskDesc.TextWrapped = true
+RiskDesc.TextXAlignment = Enum.TextXAlignment.Center
+RiskDesc.Parent = WarningContent
+
+-- Outdated Features
+local OutdatedLabel = Instance.new("TextLabel")
+OutdatedLabel.Size = UDim2.new(1, 0, 0, 30)
+OutdatedLabel.Position = UDim2.new(0, 0, 0, 130)
+OutdatedLabel.BackgroundTransparency = 1
+OutdatedLabel.Font = Enum.Font.GothamBold
+OutdatedLabel.TextSize = 14
+OutdatedLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+OutdatedLabel.Text = "⚠️ Some features may not work properly:"
+OutdatedLabel.TextXAlignment = Enum.TextXAlignment.Center
+OutdatedLabel.Parent = WarningContent
+
+local BrokenFeatures = Instance.new("TextLabel")
+BrokenFeatures.Size = UDim2.new(1, 0, 0, 80)
+BrokenFeatures.Position = UDim2.new(0, 0, 0, 160)
+BrokenFeatures.BackgroundTransparency = 1
+BrokenFeatures.Font = Enum.Font.SourceSans
+BrokenFeatures.TextSize = 12
+BrokenFeatures.TextColor3 = Color3.fromRGB(150, 150, 150)
+BrokenFeatures.Text = "• ESP / Visual Features\n• Some Teleport Commands\n• Loop / Spam Functions\n• Admin Commands on some games\n• Keybind System (may conflict)"
+BrokenFeatures.TextXAlignment = Enum.TextXAlignment.Center
+BrokenFeatures.Parent = WarningContent
+
+-- Buttons
+local ButtonFrame = Instance.new("Frame")
+ButtonFrame.Size = UDim2.new(1, -20, 0, 40)
+ButtonFrame.Position = UDim2.new(0, 10, 1, -55)
+ButtonFrame.BackgroundTransparency = 1
+ButtonFrame.Parent = WarningFrame
+
+local ContinueButton = Instance.new("TextButton")
+ContinueButton.Size = UDim2.new(0, 180, 1, 0)
+ContinueButton.Position = UDim2.new(0.5, -190, 0, 0)
+ContinueButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+ContinueButton.BackgroundTransparency = 0.2
+ContinueButton.BorderSizePixel = 0
+ContinueButton.Font = Enum.Font.GothamBold
+ContinueButton.TextSize = 14
+ContinueButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ContinueButton.Text = "⚠️ CONTINUE ANYWAY"
+ContinueButton.Parent = ButtonFrame
+
+local ContinueCorner = Instance.new("UICorner")
+ContinueCorner.CornerRadius = UDim.new(0, 6)
+ContinueCorner.Parent = ContinueButton
+
+local CancelButton = Instance.new("TextButton")
+CancelButton.Size = UDim2.new(0, 180, 1, 0)
+CancelButton.Position = UDim2.new(0.5, 10, 0, 0)
+CancelButton.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+CancelButton.BackgroundTransparency = 0.2
+CancelButton.BorderSizePixel = 0
+CancelButton.Font = Enum.Font.GothamBold
+CancelButton.TextSize = 14
+CancelButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+CancelButton.Text = "✗ UNLOAD SCRIPT"
+CancelButton.Parent = ButtonFrame
+
+local CancelCorner = Instance.new("UICorner")
+CancelCorner.CornerRadius = UDim.new(0, 6)
+CancelCorner.Parent = CancelButton
+
+-- Animation
+WarningFrame.BackgroundTransparency = 1
+WarningFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.3, true)
+task.wait(0.2)
+WarningFrame:TweenSize(UDim2.new(0, 500, 0, 300), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.5, true)
+WarningFrame.BackgroundTransparency = 0.05
+
+local userChoice = nil
+
+ContinueButton.MouseButton1Click:Connect(function()
+    userChoice = "continue"
+    WarningFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.In, Enum.EasingStyle.Back, 0.3, true)
+    task.wait(0.3)
+    WarningGui:Destroy()
+    -- Continue with script
+    LoadInfiniteYield()
 end)
-makefolder = missing("function", makefolder)
-isfolder = missing("function", isfolder)
-waxgetcustomasset = missing("function", getcustomasset or getsynasset)
-hookfunction = missing("function", hookfunction)
-hookmetamethod = missing("function", hookmetamethod)
-getnamecallmethod = missing("function", getnamecallmethod or get_namecall_method)
-checkcaller = missing("function", checkcaller, function() return false end)
-newcclosure = missing("function", newcclosure)
-getgc = missing("function", getgc or get_gc_objects)
-setthreadidentity = missing("function", setthreadidentity or (syn and syn.set_thread_identity) or syn_context_set or setthreadcontext)
-replicatesignal = missing("function", replicatesignal)
-getconnections = missing("function", getconnections or get_signal_cons)
 
--- ========== SERVICES ==========
-local Services = setmetatable({}, {
-    __index = function(self, name)
-        local success, cache = pcall(function() return cloneref(game:GetService(name)) end)
-        if success then rawset(self, name, cache); return cache end
-        error("Invalid Service: " .. tostring(name))
-    end
-})
-
-local Players = Services.Players
-local UserInputService = Services.UserInputService
-local TweenService = Services.TweenService
-local HttpService = Services.HttpService
-local RunService = Services.RunService
-local TeleportService = Services.TeleportService
-local StarterGui = Services.StarterGui
-local GuiService = Services.GuiService
-local Lighting = Services.Lighting
-local ContextActionService = Services.ContextActionService
-local ReplicatedStorage = Services.ReplicatedStorage
-local VirtualUser = cloneref(game:GetService("VirtualUser")) or nil
-local VirtualInputManager = cloneref(game:GetService("VirtualInputManager")) or nil
-
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
-local PlaceId, JobId = game.PlaceId, game.JobId
-
--- Platform detection
-local IsOnMobile = false
-pcall(function()
-    IsOnMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+CancelButton.MouseButton1Click:Connect(function()
+    userChoice = "cancel"
+    WarningFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.In, Enum.EasingStyle.Back, 0.3, true)
+    task.wait(0.3)
+    WarningGui:Destroy()
+    getgenv().IY_V3_LOADED = false
+    return
 end)
 
--- ========== LOAD RAYFIELD ==========
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/lzhenwei76-beep/RayfieldCopy/refs/heads/main/source.lua'))()
-
--- ========== GLOBAL VARIABLES ==========
-IY_PREFIX = ";"
-IY_KEYBINDS = {}
-IY_ALIASES = {}
-IY_WAYPOINTS = {}
-IY_PLUGINS = {}
-IY_EVENT_BINDS = {}
-IY_CLICK_TP_KEY = nil
-IY_CLICK_DELETE_KEY = nil
-IY_LOGS_ENABLED = false
-IY_JOIN_LOGS_ENABLED = false
-IY_CHAT_HISTORY = {}
-IY_JOIN_HISTORY = {}
-IY_KEEP_OPEN = false
-IY_TOGGLES = {}
-IY_FLYING = false
-IY_NOCLIP = false
-IY_GOD = false
-IY_INF_JUMP = false
-IY_FLY_SPEED = 50
-IY_WALK_SPEED = 16
-IY_JUMP_POWER = 50
-
-local currentVersion = "6.4"
-
--- ========== HELPER FUNCTIONS ==========
-local function splitString(input, delimiter)
-    local result = {}
-    for match in (input .. delimiter):gmatch("(.-)" .. delimiter) do
-        table.insert(result, match)
+-- Wait for user choice (with timeout)
+local function LoadInfiniteYield()
+    -- ========== COMPATIBILITY LAYER ==========
+    local function missing(t, f, fallback)
+        return type(f) == t and f or fallback
     end
-    return result
-end
 
-local function getArgs(input, startIndex)
-    local args = {}
-    for arg in input:gmatch("%S+") do
-        table.insert(args, arg)
-    end
-    return args
-end
+    local cloneref = missing("function", cloneref, function(...) return ... end)
+    local sethidden = missing("function", sethiddenproperty or set_hidden_property or set_hidden_prop)
+    local gethidden = missing("function", gethiddenproperty or get_hidden_property or get_hidden_prop)
+    local queueteleport = missing("function", queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport))
+    local httprequest = missing("function", request or http_request or (syn and syn.request) or (http and http.request) or (fluxus and fluxus.request))
+    local setclipboard = missing("function", setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set))
+    local firetouchinterest = missing("function", firetouchinterest)
+    local writefile, readfile = writefile, readfile
+    local makefolder, isfolder, isfile = makefolder, isfolder, isfile
+    local hookfunction = missing("function", hookfunction)
+    local hookmetamethod = missing("function", hookmetamethod)
+    local getnamecallmethod = missing("function", getnamecallmethod or get_namecall_method)
+    local checkcaller = missing("function", checkcaller, function() return false end)
+    local newcclosure = missing("function", newcclosure)
+    local getgc = missing("function", getgc or get_gc_objects)
 
-local function getPlayer(input)
-    if input == "me" then return LocalPlayer end
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Name:lower():sub(1, #input) == input:lower() then
-            return player
+    -- ========== SERVICES ==========
+    local Services = setmetatable({}, {
+        __index = function(self, name)
+            local success, cache = pcall(function() return cloneref(game:GetService(name)) end)
+            if success then rawset(self, name, cache); return cache end
+            error("Invalid Service: " .. name)
         end
-    end
-    return nil
-end
+    })
 
-local function getAllPlayers()
-    local players = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            table.insert(players, player)
+    local Players = Services.Players
+    local UserInputService = Services.UserInputService
+    local RunService = Services.RunService
+    local TweenService = Services.TweenService
+    local HttpService = Services.HttpService
+    local TeleportService = Services.TeleportService
+    local Lighting = Services.Lighting
+    local ReplicatedStorage = Services.ReplicatedStorage
+    local TextChatService = Services.TextChatService
+    local VirtualInputManager = Services.VirtualInputManager
+    local CoreGui = Services.CoreGui
+
+    local LocalPlayer = Players.LocalPlayer
+    local Mouse = LocalPlayer:GetMouse()
+    local PlaceId, JobId = game.PlaceId, game.JobId
+
+    -- Platform detection
+    local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+    local IsLegacyChat = TextChatService.ChatVersion == Enum.ChatVersion.LegacyChatService
+
+    -- ========== LOAD RAYFIELD ==========
+    local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/lzhenwei76-beep/RayfieldCopy/refs/heads/main/source.lua'))()
+
+    -- ========== CONFIGURATION ==========
+    local Config = {
+        Prefix = ";",
+        KeepOpen = false,
+        Notifications = true,
+        SaveData = true,
+        AutoLoad = true,
+        Theme = "Default",
+        ShowWarnings = true
+    }
+
+    -- ========== DATA STORAGE ==========
+    local Data = {
+        Keybinds = {},
+        Aliases = {},
+        Waypoints = {},
+        Plugins = {},
+        EventBinds = {},
+        Settings = {}
+    }
+
+    -- ========== TOGGLES ==========
+    local Toggles = {
+        Flying = false,
+        Noclip = false,
+        God = false,
+        InfiniteJump = false,
+        ESP = false,
+        Speed = 16,
+        JumpPower = 50,
+        FlySpeed = 50
+    }
+
+    -- ========== ENHANCED HELPER FUNCTIONS ==========
+    local function split(str, delimiter)
+        local result = {}
+        for match in (str .. delimiter):gmatch("(.-)" .. delimiter) do
+            table.insert(result, match)
         end
+        return result
     end
-    return players
-end
 
--- ========== COMMAND FUNCTIONS ==========
-local function cmdFly(args)
-    local player = args[1] and getPlayer(args[1]) or LocalPlayer
-    if not player or not player.Character then return "Player not found" end
-    
-    local char = player.Character
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local humanoid = char:FindFirstChild("Humanoid")
-    
-    if not hrp or not humanoid then return "Character not ready" end
-    
-    if IY_FLYING then
-        IY_FLYING = false
-        if humanoid.PlatformStand then humanoid.PlatformStand = false end
-        local bodyVelocity = hrp:FindFirstChild("BodyVelocity")
-        if bodyVelocity then bodyVelocity:Destroy() end
-        return "Fly disabled"
-    else
-        IY_FLYING = true
-        IY_NOCLIP = false
-        
-        local bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        bodyVelocity.Parent = hrp
-        
-        humanoid.PlatformStand = true
-        humanoid.AutoRotate = false
-        
-        local connection
-        connection = RunService.RenderStepped:Connect(function()
-            if not IY_FLYING or not hrp or not hrp.Parent then
-                if connection then connection:Disconnect() end
-                return
-            end
-            
-            local camera = workspace.CurrentCamera
-            local moveDirection = Vector3.new(0, 0, 0)
-            
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                moveDirection = moveDirection + camera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                moveDirection = moveDirection - camera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                moveDirection = moveDirection - camera.CFrame.RightVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                moveDirection = moveDirection + camera.CFrame.RightVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                moveDirection = moveDirection + Vector3.new(0, 1, 0)
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                moveDirection = moveDirection - Vector3.new(0, 1, 0)
-            end
-            
-            if moveDirection.Magnitude > 0 then
-                moveDirection = moveDirection.Unit * IY_FLY_SPEED
-            end
-            
-            bodyVelocity.Velocity = moveDirection
-        end)
-        
-        return "Fly enabled (Speed: " .. IY_FLY_SPEED .. ")"
+    local function getArgs(input)
+        local args = {}
+        for arg in input:gmatch("%S+") do
+            table.insert(args, arg)
+        end
+        return args
     end
-end
 
-local function cmdNoclip(args)
-    local player = args[1] and getPlayer(args[1]) or LocalPlayer
-    if not player or not player.Character then return "Player not found" end
-    
-    IY_NOCLIP = not IY_NOCLIP
-    
-    if IY_NOCLIP then
-        local char = player.Character
-        local function nocollide()
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
+    local function findPlayer(input)
+        if input == "me" then return LocalPlayer end
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player.Name:lower():find(input:lower()) then
+                return player
             end
         end
-        nocollide()
-        
-        local connection
-        connection = char.DescendantAdded:Connect(function(desc)
-            if desc:IsA("BasePart") then
-                desc.CanCollide = false
-            end
-        end)
-        
-        return "Noclip enabled"
-    else
-        return "Noclip disabled"
+        return nil
     end
-end
 
-local function cmdGod(args)
-    local player = args[1] and getPlayer(args[1]) or LocalPlayer
-    if not player or not player.Character then return "Player not found" end
-    
-    IY_GOD = not IY_GOD
-    
-    if IY_GOD then
-        local humanoid = player.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-                if IY_GOD and humanoid then
-                    humanoid.Health = humanoid.MaxHealth
-                end
+    local function getAllPlayers()
+        local list = {}
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                table.insert(list, player)
+            end
+        end
+        return list
+    end
+
+    local function notify(title, content, duration)
+        if Config.Notifications then
+            pcall(function()
+                Rayfield:Notify({Title = title, Content = content, Duration = duration or 3})
             end)
         end
-        return "God mode enabled"
-    else
-        return "God mode disabled"
     end
-end
 
-local function cmdInfJump(args)
-    IY_INF_JUMP = not IY_INF_JUMP
-    
-    if IY_INF_JUMP then
-        local connection
-        connection = UserInputService.JumpRequest:Connect(function()
-            if IY_INF_JUMP and LocalPlayer.Character then
-                local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-                if humanoid then
-                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                end
+    local function warnUser(message)
+        if Config.ShowWarnings then
+            pcall(function()
+                Rayfield:Notify({Title = "⚠️ WARNING", Content = message, Duration = 5})
+            end)
+        end
+        print("[IY V3 WARNING] " .. message)
+    end
+
+    -- ========== SAVE/LOAD SYSTEM ==========
+    local function saveData()
+        if not writefile then return end
+        pcall(function()
+            makefolder("InfiniteYieldV3")
+            writefile("InfiniteYieldV3/keybinds.json", HttpService:JSONEncode(Data.Keybinds))
+            writefile("InfiniteYieldV3/aliases.json", HttpService:JSONEncode(Data.Aliases))
+            writefile("InfiniteYieldV3/waypoints.json", HttpService:JSONEncode(Data.Waypoints))
+            writefile("InfiniteYieldV3/settings.json", HttpService:JSONEncode(Config))
+        end)
+    end
+
+    local function loadData()
+        if not isfile then return end
+        pcall(function()
+            if isfile("InfiniteYieldV3/keybinds.json") then
+                Data.Keybinds = HttpService:JSONDecode(readfile("InfiniteYieldV3/keybinds.json"))
+            end
+            if isfile("InfiniteYieldV3/aliases.json") then
+                Data.Aliases = HttpService:JSONDecode(readfile("InfiniteYieldV3/aliases.json"))
+            end
+            if isfile("InfiniteYieldV3/waypoints.json") then
+                Data.Waypoints = HttpService:JSONDecode(readfile("InfiniteYieldV3/waypoints.json"))
+            end
+            if isfile("InfiniteYieldV3/settings.json") then
+                local saved = HttpService:JSONDecode(readfile("InfiniteYieldV3/settings.json"))
+                for k, v in pairs(saved) do Config[k] = v end
             end
         end)
-        return "Infinite jump enabled"
-    else
-        return "Infinite jump disabled"
     end
-end
 
-local function cmdSpeed(args)
-    local speed = tonumber(args[1])
-    if not speed then return "Usage: ;speed <number>" end
-    
-    IY_WALK_SPEED = math.clamp(speed, 16, 500)
-    if LocalPlayer.Character then
-        local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = IY_WALK_SPEED
+    -- ========== CORE COMMANDS (Limited due to outdated status) ==========
+    local Commands = {}
+
+    -- Movement Commands (Mostly Working)
+    function Commands.fly(args)
+        Toggles.Flying = not Toggles.Flying
+        
+        if Toggles.Flying then
+            local char = LocalPlayer.Character
+            if not char then warnUser("Character not found for fly command"); return "Character not found" end
+            
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            local humanoid = char:FindFirstChild("Humanoid")
+            if not hrp or not humanoid then warnUser("Character not ready for fly"); return "Character not ready" end
+            
+            local bv = Instance.new("BodyVelocity")
+            bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            bv.Velocity = Vector3.new(0, 0, 0)
+            bv.Parent = hrp
+            
+            humanoid.PlatformStand = true
+            humanoid.AutoRotate = false
+            
+            local connection
+            connection = RunService.RenderStepped:Connect(function()
+                if not Toggles.Flying or not hrp or not hrp.Parent then
+                    if connection then connection:Disconnect() end
+                    return
+                end
+                
+                local cam = workspace.CurrentCamera
+                local move = Vector3.new(0, 0, 0)
+                
+                if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + cam.CFrame.LookVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - cam.CFrame.LookVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - cam.CFrame.RightVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + cam.CFrame.RightVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
+                
+                bv.Velocity = move.Magnitude > 0 and move.Unit * Toggles.FlySpeed or Vector3.new(0, 0, 0)
+            end)
+            
+            notify("Fly", "Enabled (Speed: " .. Toggles.FlySpeed .. ")", 2)
+            return "Fly enabled"
+        else
+            local char = LocalPlayer.Character
+            if char then
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local humanoid = char:FindFirstChild("Humanoid")
+                if hrp then
+                    local bv = hrp:FindFirstChild("BodyVelocity")
+                    if bv then bv:Destroy() end
+                end
+                if humanoid then
+                    humanoid.PlatformStand = false
+                    humanoid.AutoRotate = true
+                end
+            end
+            notify("Fly", "Disabled", 2)
+            return "Fly disabled"
         end
     end
-    return "Speed set to " .. IY_WALK_SPEED
-end
 
-local function cmdJumppower(args)
-    local power = tonumber(args[1])
-    if not power then return "Usage: ;jumppower <number>" end
-    
-    IY_JUMP_POWER = math.clamp(power, 50, 500)
-    if LocalPlayer.Character then
-        local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.JumpPower = IY_JUMP_POWER
+    function Commands.noclip(args)
+        Toggles.Noclip = not Toggles.Noclip
+        
+        local function setCollision(state)
+            local char = LocalPlayer.Character
+            if not char then return end
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = state
+                end
+            end
+        end
+        
+        if Toggles.Noclip then
+            setCollision(false)
+            local connection
+            connection = LocalPlayer.CharacterAdded:Connect(function()
+                if Toggles.Noclip then setCollision(false) end
+            end)
+            notify("Noclip", "Enabled (May be unstable)", 2)
+            warnUser("Noclip may be detected by anti-cheat")
+            return "Noclip enabled"
+        else
+            setCollision(true)
+            notify("Noclip", "Disabled", 2)
+            return "Noclip disabled"
         end
     end
-    return "Jump power set to " .. IY_JUMP_POWER
-end
 
-local function cmdTP(args)
-    if not args[1] then return "Usage: ;tp <player>" end
-    
-    local target = getPlayer(args[1])
-    if not target or not target.Character then return "Target not found" end
-    
-    local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
-    if not targetRoot then return "Target not ready" end
-    
-    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not localRoot then return "You are not in game" end
-    
-    localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 5)
-    return "Teleported to " .. target.Name
-end
-
-local function cmdBring(args)
-    if not args[1] then return "Usage: ;bring <player>" end
-    
-    local target = getPlayer(args[1])
-    if not target or not target.Character then return "Target not found" end
-    
-    local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
-    if not targetRoot then return "Target not ready" end
-    
-    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not localRoot then return "You are not in game" end
-    
-    targetRoot.CFrame = localRoot.CFrame * CFrame.new(0, 0, 5)
-    return "Brought " .. target.Name .. " to you"
-end
-
-local function cmdGoto(args)
-    if not args[1] then return "Usage: ;goto <player>" end
-    
-    local target = getPlayer(args[1])
-    if not target or not target.Character then return "Target not found" end
-    
-    local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
-    if not targetRoot then return "Target not ready" end
-    
-    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not localRoot then return "You are not in game" end
-    
-    localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 5)
-    return "Teleported to " .. target.Name
-end
-
-local function cmdTPM(args)
-    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not localRoot then return "You are not in game" end
-    
-    local mousePos = Mouse.Hit.p
-    localRoot.CFrame = CFrame.new(mousePos)
-    return "Teleported to mouse position"
-end
-
-local function cmdSetWaypoint(args)
-    if not args[1] then return "Usage: ;swp <name>" end
-    
-    local name = args[1]
-    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not localRoot then return "You are not in game" end
-    
-    IY_WAYPOINTS[name] = localRoot.Position
-    if writefile then
-        writefile("infiniteyield/waypoints.txt", HttpService:JSONEncode(IY_WAYPOINTS))
-    end
-    return "Waypoint '" .. name .. "' saved at " .. string.format("%.1f, %.1f, %.1f", localRoot.Position.X, localRoot.Position.Y, localRoot.Position.Z)
-end
-
-local function cmdWaypoint(args)
-    if not args[1] then return "Usage: ;wp <name>" end
-    
-    local name = args[1]
-    local pos = IY_WAYPOINTS[name]
-    if not pos then return "Waypoint not found" end
-    
-    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not localRoot then return "You are not in game" end
-    
-    localRoot.CFrame = CFrame.new(pos)
-    return "Teleported to waypoint '" .. name .. "'"
-end
-
-local function cmdDelWaypoint(args)
-    if not args[1] then return "Usage: ;delwp <name>" end
-    
-    local name = args[1]
-    if not IY_WAYPOINTS[name] then return "Waypoint not found" end
-    
-    IY_WAYPOINTS[name] = nil
-    if writefile then
-        writefile("infiniteyield/waypoints.txt", HttpService:JSONEncode(IY_WAYPOINTS))
-    end
-    return "Waypoint '" .. name .. "' deleted"
-end
-
-local function cmdWaypoints(args)
-    local list = "Waypoints:\n"
-    for name, pos in pairs(IY_WAYPOINTS) do
-        list = list .. "• " .. name .. " → " .. string.format("%.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z) .. "\n"
-    end
-    if list == "Waypoints:\n" then list = "No waypoints saved" end
-    return list
-end
-
-local function cmdBind(args)
-    if not args[1] or not args[2] then return "Usage: ;bind <key> <command>" end
-    
-    local key = args[1]
-    local command = table.concat(args, " ", 2)
-    
-    IY_KEYBINDS[key] = command
-    if writefile then
-        writefile("infiniteyield/keybinds.txt", HttpService:JSONEncode(IY_KEYBINDS))
-    end
-    return "Bound " .. key .. " to: " .. command
-end
-
-local function cmdUnbind(args)
-    if not args[1] then return "Usage: ;unbind <key>" end
-    
-    local key = args[1]
-    if IY_KEYBINDS[key] then
-        IY_KEYBINDS[key] = nil
-        if writefile then
-            writefile("infiniteyield/keybinds.txt", HttpService:JSONEncode(IY_KEYBINDS))
-        end
-        return "Unbound " .. key
-    end
-    return "No keybind found for " .. key
-end
-
-local function cmdKeybinds(args)
-    local list = "Keybinds:\n"
-    for key, cmd in pairs(IY_KEYBINDS) do
-        list = list .. "• " .. key .. " → " .. cmd .. "\n"
-    end
-    if list == "Keybinds:\n" then list = "No keybinds set" end
-    return list
-end
-
-local function cmdAddAlias(args)
-    if not args[1] or not args[2] then return "Usage: ;addalias <alias> <command>" end
-    
-    local alias = args[1]
-    local command = args[2]
-    
-    IY_ALIASES[alias] = command
-    if writefile then
-        writefile("infiniteyield/aliases.txt", HttpService:JSONEncode(IY_ALIASES))
-    end
-    return "Alias added: " .. alias .. " → " .. command
-end
-
-local function cmdAliases(args)
-    local list = "Aliases:\n"
-    for alias, cmd in pairs(IY_ALIASES) do
-        list = list .. "• " .. alias .. " → " .. cmd .. "\n"
-    end
-    if list == "Aliases:\n" then list = "No aliases set" end
-    return list
-end
-
-local function cmdLoop(args)
-    if not args[1] then return "Usage: ;loop <command>" end
-    
-    local command = table.concat(args, " ")
-    local looping = true
-    
-    local connection
-    connection = RunService.RenderStepped:Connect(function()
-        if looping then
-            executeCommand(command, {})
-        end
-    end)
-    
-    task.wait(5)
-    looping = false
-    connection:Disconnect()
-    return "Looped command 5 times"
-end
-
-local function cmdSpam(args)
-    if not args[1] or not args[2] then return "Usage: ;spam <count> <message>" end
-    
-    local count = tonumber(args[1])
-    local message = table.concat(args, " ", 2)
-    
-    for i = 1, count do
-        if isLegacyChat then
-            local chatBar = Players.LocalPlayer.PlayerGui:FindFirstChild("Chat")
-            if chatBar then
-                local chatFrame = chatBar:FindFirstChild("Frame")
-                if chatFrame then
-                    local chatInput = chatFrame:FindFirstChild("ChatBarParentFrame"):FindFirstChild("ChatBar")
-                    if chatInput then
-                        chatInput.Text = message
-                        chatInput:CaptureFocus()
-                        local event = chatInput:FindFirstChild("FocusLost")
-                        if event then
-                            event:Fire(true)
+    function Commands.god(args)
+        Toggles.God = not Toggles.God
+        
+        if Toggles.God then
+            local function setupGod(char)
+                local humanoid = char:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+                        if Toggles.God and humanoid then
+                            humanoid.Health = humanoid.MaxHealth
                         end
+                    end)
+                end
+            end
+            
+            setupGod(LocalPlayer.Character)
+            LocalPlayer.CharacterAdded:Connect(setupGod)
+            notify("God Mode", "Enabled (May be unstable)", 2)
+            warnUser("God mode may not work in all games")
+            return "God mode enabled"
+        else
+            notify("God Mode", "Disabled", 2)
+            return "God mode disabled"
+        end
+    end
+
+    function Commands.infJump(args)
+        Toggles.InfiniteJump = not Toggles.InfiniteJump
+        
+        if Toggles.InfiniteJump then
+            local connection
+            connection = UserInputService.JumpRequest:Connect(function()
+                if Toggles.InfiniteJump and LocalPlayer.Character then
+                    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+                    if humanoid then
+                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
                     end
+                end
+            end)
+            notify("Infinite Jump", "Enabled", 2)
+            return "Infinite jump enabled"
+        else
+            notify("Infinite Jump", "Disabled", 2)
+            return "Infinite jump disabled"
+        end
+    end
+
+    function Commands.speed(args)
+        local speed = tonumber(args[1])
+        if not speed then return "Usage: ;speed <number>" end
+        
+        Toggles.Speed = math.clamp(speed, 16, 500)
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+            if humanoid then humanoid.WalkSpeed = Toggles.Speed end
+        end
+        notify("Speed", "Set to " .. Toggles.Speed, 2)
+        if Toggles.Speed > 100 then warnUser("High speed may trigger anti-cheat") end
+        return "Speed set to " .. Toggles.Speed
+    end
+
+    function Commands.jumppower(args)
+        local power = tonumber(args[1])
+        if not power then return "Usage: ;jumppower <number>" end
+        
+        Toggles.JumpPower = math.clamp(power, 50, 500)
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+            if humanoid then humanoid.JumpPower = Toggles.JumpPower end
+        end
+        notify("Jump Power", "Set to " .. Toggles.JumpPower, 2)
+        return "Jump power set to " .. Toggles.JumpPower
+    end
+
+    function Commands.flyspeed(args)
+        local speed = tonumber(args[1])
+        if not speed then return "Usage: ;flyspeed <number>" end
+        
+        Toggles.FlySpeed = math.clamp(speed, 10, 500)
+        notify("Fly Speed", "Set to " .. Toggles.FlySpeed, 2)
+        return "Fly speed set to " .. Toggles.FlySpeed
+    end
+
+    -- Teleport Commands (Mostly Working)
+    function Commands.tp(args)
+        local target = args[1] and findPlayer(args[1])
+        if not target then return "Usage: ;tp <player>" end
+        
+        local targetChar = target.Character
+        local localChar = LocalPlayer.Character
+        if not targetChar or not localChar then return "Character not found" end
+        
+        local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+        local localRoot = localChar:FindFirstChild("HumanoidRootPart")
+        if not targetRoot or not localRoot then return "Character not ready" end
+        
+        localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 5)
+        notify("Teleport", "Teleported to " .. target.Name, 2)
+        warnUser("Teleport commands may be patched in some games")
+        return "Teleported to " .. target.Name
+    end
+
+    function Commands.bring(args)
+        local target = args[1] and findPlayer(args[1])
+        if not target then return "Usage: ;bring <player>" end
+        
+        local targetChar = target.Character
+        local localChar = LocalPlayer.Character
+        if not targetChar or not localChar then return "Character not found" end
+        
+        local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+        local localRoot = localChar:FindFirstChild("HumanoidRootPart")
+        if not targetRoot or not localRoot then return "Character not ready" end
+        
+        targetRoot.CFrame = localRoot.CFrame * CFrame.new(0, 0, 5)
+        notify("Bring", "Brought " .. target.Name, 2)
+        return "Brought " .. target.Name
+    end
+
+    function Commands.goto(args)
+        local target = args[1] and findPlayer(args[1])
+        if not target then return "Usage: ;goto <player>" end
+        
+        local targetChar = target.Character
+        local localChar = LocalPlayer.Character
+        if not targetChar or not localChar then return "Character not found" end
+        
+        local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+        local localRoot = localChar:FindFirstChild("HumanoidRootPart")
+        if not targetRoot or not localRoot then return "Character not ready" end
+        
+        localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 5)
+        notify("Goto", "Went to " .. target.Name, 2)
+        return "Went to " .. target.Name
+    end
+
+    function Commands.tpm(args)
+        local localChar = LocalPlayer.Character
+        if not localChar then return "Character not found" end
+        
+        local localRoot = localChar:FindFirstChild("HumanoidRootPart")
+        if not localRoot then return "Character not ready" end
+        
+        localRoot.CFrame = CFrame.new(Mouse.Hit.p)
+        notify("Teleport", "Teleported to mouse position", 2)
+        return "Teleported to mouse"
+    end
+
+    -- Waypoint Commands (Working)
+    function Commands.setwaypoint(args)
+        local name = args[1]
+        if not name then return "Usage: ;swp <name>" end
+        
+        local localChar = LocalPlayer.Character
+        if not localChar then return "Character not found" end
+        
+        local localRoot = localChar:FindFirstChild("HumanoidRootPart")
+        if not localRoot then return "Character not ready" end
+        
+        Data.Waypoints[name] = localRoot.Position
+        saveData()
+        notify("Waypoint", "Saved '" .. name .. "'", 2)
+        return "Waypoint saved: " .. name
+    end
+
+    function Commands.waypoint(args)
+        local name = args[1]
+        if not name then return "Usage: ;wp <name>" end
+        
+        local pos = Data.Waypoints[name]
+        if not pos then return "Waypoint not found" end
+        
+        local localChar = LocalPlayer.Character
+        if not localChar then return "Character not found" end
+        
+        local localRoot = localChar:FindFirstChild("HumanoidRootPart")
+        if not localRoot then return "Character not ready" end
+        
+        localRoot.CFrame = CFrame.new(pos)
+        notify("Waypoint", "Teleported to '" .. name .. "'", 2)
+        return "Teleported to waypoint"
+    end
+
+    function Commands.delwaypoint(args)
+        local name = args[1]
+        if not name then return "Usage: ;delwp <name>" end
+        
+        if not Data.Waypoints[name] then return "Waypoint not found" end
+        
+        Data.Waypoints[name] = nil
+        saveData()
+        notify("Waypoint", "Deleted '" .. name .. "'", 2)
+        return "Waypoint deleted"
+    end
+
+    function Commands.waypoints(args)
+        local list = "=== Waypoints ===\n"
+        for name, pos in pairs(Data.Waypoints) do
+            list = list .. string.format("• %s → (%.1f, %.1f, %.1f)\n", name, pos.X, pos.Y, pos.Z)
+        end
+        if list == "=== Waypoints ===\n" then list = "No waypoints saved" end
+        return list
+    end
+
+    -- Keybind Commands (May have conflicts)
+    function Commands.bind(args)
+        if not args[1] or not args[2] then return "Usage: ;bind <key> <command>" end
+        
+        local key = args[1]:upper()
+        local command = table.concat(args, " ", 2)
+        
+        Data.Keybinds[key] = command
+        saveData()
+        notify("Keybind", key .. " → " .. command, 2)
+        warnUser("Keybinds may conflict with game controls")
+        return "Bound " .. key .. " to: " .. command
+    end
+
+    function Commands.unbind(args)
+        if not args[1] then return "Usage: ;unbind <key>" end
+        
+        local key = args[1]:upper()
+        if Data.Keybinds[key] then
+            Data.Keybinds[key] = nil
+            saveData()
+            notify("Keybind", "Unbound " .. key, 2)
+            return "Unbound " .. key
+        end
+        return "No keybind found for " .. key
+    end
+
+    function Commands.keybinds(args)
+        local list = "=== Keybinds ===\n"
+        for key, cmd in pairs(Data.Keybinds) do
+            list = list .. "• " .. key .. " → " .. cmd .. "\n"
+        end
+        if list == "=== Keybinds ===\n" then list = "No keybinds set" end
+        return list
+    end
+
+    -- Alias Commands
+    function Commands.addalias(args)
+        if not args[1] or not args[2] then return "Usage: ;addalias <alias> <command>" end
+        
+        local alias = args[1]:lower()
+        local command = args[2]:lower()
+        
+        Data.Aliases[alias] = command
+        saveData()
+        notify("Alias", alias .. " → " .. command, 2)
+        return "Alias added: " .. alias
+    end
+
+    function Commands.delalias(args)
+        if not args[1] then return "Usage: ;delalias <alias>" end
+        
+        local alias = args[1]:lower()
+        if Data.Aliases[alias] then
+            Data.Aliases[alias] = nil
+            saveData()
+            notify("Alias", "Deleted " .. alias, 2)
+            return "Alias deleted"
+        end
+        return "Alias not found"
+    end
+
+    function Commands.aliases(args)
+        local list = "=== Aliases ===\n"
+        for alias, cmd in pairs(Data.Aliases) do
+            list = list .. "• " .. alias .. " → " .. cmd .. "\n"
+        end
+        if list == "=== Aliases ===\n" then list = "No aliases set" end
+        return list
+    end
+
+    -- Admin Commands (May not work in most games)
+    function Commands.kick(args)
+        if not args[1] then return "Usage: ;kick <player> [reason]" end
+        
+        local target = findPlayer(args[1])
+        if not target then return "Player not found" end
+        
+        local reason = args[2] or "Kicked by Infinite Yield"
+        
+        warnUser("Kick command may not work in this game")
+        
+        local success, err = pcall(function()
+            target:Kick(reason)
+        end)
+        
+        if success then
+            notify("Kick", "Kicked " .. target.Name, 2)
+            return "Kicked " .. target.Name
+        else
+            return "Failed to kick: " .. tostring(err)
+        end
+    end
+
+    function Commands.freeze(args)
+        if not args[1] then return "Usage: ;freeze <player>" end
+        
+        local target = findPlayer(args[1])
+        if not target then return "Player not found" end
+        
+        local char = target.Character
+        if not char then return "Character not found" end
+        
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local bv = Instance.new("BodyVelocity")
+            bv.Velocity = Vector3.new(0, 0, 0)
+            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bv.Parent = hrp
+            notify("Freeze", "Froze " .. target.Name, 2)
+            warnUser("Freeze may not work in all games")
+            return "Froze " .. target.Name
+        end
+        return "Failed to freeze"
+    end
+
+    function Commands.unfreeze(args)
+        if not args[1] then return "Usage: ;unfreeze <player>" end
+        
+        local target = findPlayer(args[1])
+        if not target then return "Player not found" end
+        
+        local char = target.Character
+        if not char then return "Character not found" end
+        
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local bv = hrp:FindFirstChild("BodyVelocity")
+            if bv then bv:Destroy() end
+            notify("Unfreeze", "Unfroze " .. target.Name, 2)
+            return "Unfroze " .. target.Name
+        end
+        return "Failed to unfreeze"
+    end
+
+    -- Utility Commands (Mostly Working)
+    function Commands.chat(args)
+        if not args[1] then return "Usage: ;chat <message>" end
+        
+        local message = table.concat(args, " ")
+        
+        if IsLegacyChat then
+            local chat = LocalPlayer.PlayerGui:FindFirstChild("Chat")
+            if chat then
+                local bar = chat:FindFirstChild("Frame"):FindFirstChild("ChatBarParentFrame"):FindFirstChild("ChatBar")
+                if bar then
+                    bar.Text = message
+                    bar:CaptureFocus()
+                    local event = bar:FindFirstChild("FocusLost")
+                    if event then event:Fire(true) end
                 end
             end
         else
-            local textChatService = game:GetService("TextChatService")
-            if textChatService and textChatService.TextChannels then
-                local channel = textChatService.TextChannels.RBXGeneral
-                if channel then
-                    channel:SendAsync(message)
-                end
+            local channel = TextChatService.TextChannels.RBXGeneral
+            if channel then channel:SendAsync(message) end
+        end
+        
+        notify("Chat", "Sent: " .. message, 2)
+        return "Message sent"
+    end
+
+    function Commands.serverhop(args)
+        warnUser("Server hop may not work on all executors")
+        
+        local servers = {}
+        local response = game:HttpGetAsync("https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?limit=100")
+        local data = HttpService:JSONDecode(response)
+        
+        for _, server in pairs(data.data) do
+            if server.playing < server.maxPlayers and server.id ~= JobId then
+                table.insert(servers, server.id)
             end
         end
-        task.wait(0.1)
-    end
-    return "Spammed " .. count .. " messages"
-end
-
-local function cmdKick(args)
-    if not args[1] then return "Usage: ;kick <player>" end
-    
-    local target = getPlayer(args[1])
-    if not target then return "Player not found" end
-    
-    local reason = args[2] or "Kicked by Infinite Yield"
-    
-    local kickCmd = [[
-        local player = game.Players:FindFirstChild("]] .. target.Name .. [[")
-        if player then player:Kick("]] .. reason .. [[") end
-    ]]
-    loadstring(kickCmd)()
-    return "Kicked " .. target.Name
-end
-
-local function cmdLoopKick(args)
-    if not args[1] then return "Usage: ;loopkick <player>" end
-    
-    local target = getPlayer(args[1])
-    if not target then return "Player not found" end
-    
-    local kicking = true
-    local connection
-    connection = RunService.RenderStepped:Connect(function()
-        if kicking and target and target.Parent then
-            local kickCmd = [[
-                local player = game.Players:FindFirstChild("]] .. target.Name .. [[")
-                if player then player:Kick("Loop kicked by Infinite Yield") end
-            ]]
-            loadstring(kickCmd)()
-        end
-    end)
-    
-    task.wait(10)
-    kicking = false
-    connection:Disconnect()
-    return "Loop kicked " .. target.Name .. " for 10 seconds"
-end
-
-local function cmdFreeze(args)
-    if not args[1] then return "Usage: ;freeze <player>" end
-    
-    local target = getPlayer(args[1])
-    if not target or not target.Character then return "Player not found" end
-    
-    local hrp = target.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVelocity.Parent = hrp
-        return "Froze " .. target.Name
-    end
-    return "Failed to freeze player"
-end
-
-local function cmdUnfreeze(args)
-    if not args[1] then return "Usage: ;unfreeze <player>" end
-    
-    local target = getPlayer(args[1])
-    if not target or not target.Character then return "Player not found" end
-    
-    local hrp = target.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local bodyVelocity = hrp:FindFirstChild("BodyVelocity")
-        if bodyVelocity then bodyVelocity:Destroy() end
-        return "Unfroze " .. target.Name
-    end
-    return "Failed to unfreeze player"
-end
-
-local function cmdChat(args)
-    if not args[1] then return "Usage: ;chat <message>" end
-    
-    local message = table.concat(args, " ")
-    
-    if isLegacyChat then
-        local chatBar = Players.LocalPlayer.PlayerGui:FindFirstChild("Chat")
-        if chatBar then
-            local chatFrame = chatBar:FindFirstChild("Frame")
-            if chatFrame then
-                local chatInput = chatFrame:FindFirstChild("ChatBarParentFrame"):FindFirstChild("ChatBar")
-                if chatInput then
-                    chatInput.Text = message
-                    chatInput:CaptureFocus()
-                    local event = chatInput:FindFirstChild("FocusLost")
-                    if event then
-                        event:Fire(true)
-                    end
-                end
+        
+        if #servers > 0 then
+            local random = servers[math.random(1, #servers)]
+            if queueteleport then
+                queueteleport(random)
+                notify("Server Hop", "Teleporting...", 2)
+                return "Teleporting to random server"
+            else
+                return "Server hop not supported on this executor"
             end
         end
-    else
-        local textChatService = game:GetService("TextChatService")
-        if textChatService and textChatService.TextChannels then
-            local channel = textChatService.TextChannels.RBXGeneral
-            if channel then
-                channel:SendAsync(message)
-            end
-        end
+        return "No other servers found"
     end
-    return "Sent: " .. message
-end
 
-local function cmdServerHop(args)
-    local servers = {}
-    local serversList = game:GetService("HttpService"):JSONDecode(game:HttpGetAsync("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?limit=100"))
-    
-    for _, server in pairs(serversList.data) do
-        if server.playing < server.maxPlayers and server.id ~= game.JobId then
-            table.insert(servers, server.id)
-        end
-    end
-    
-    if #servers > 0 then
-        local randomServer = servers[math.random(1, #servers)]
+    function Commands.rejoin(args)
         if queueteleport then
-            queueteleport(randomServer)
-            return "Teleporting to random server..."
-        else
-            return "Server hop not supported on this executor"
+            queueteleport(PlaceId)
+            notify("Rejoin", "Rejoining...", 2)
+            return "Rejoining..."
         end
-    end
-    return "No other servers found"
-end
-
-local function cmdRejoin(args)
-    if queueteleport then
-        queueteleport(game.PlaceId)
-        return "Rejoining..."
-    else
         return "Rejoin not supported on this executor"
     end
-end
 
-local function cmdHelp(args)
-    local commands = {
-        "=== Infinite Yield Commands ===",
-        ";fly - Toggle fly",
-        ";noclip - Toggle noclip",
-        ";god - Toggle god mode",
-        ";inf jump - Toggle infinite jump",
-        ";speed <number> - Set walkspeed",
-        ";jumppower <number> - Set jump power",
-        ";tp <player> - Teleport to player",
-        ";bring <player> - Bring player to you",
-        ";goto <player> - Go to player",
-        ";tpm - Teleport to mouse",
-        ";swp <name> - Save waypoint",
-        ";wp <name> - Go to waypoint",
-        ";delwp <name> - Delete waypoint",
-        ";waypoints - List waypoints",
-        ";bind <key> <cmd> - Bind key to command",
-        ";unbind <key> - Remove keybind",
-        ";keybinds - List keybinds",
-        ";addalias <alias> <cmd> - Add alias",
-        ";aliases - List aliases",
-        ";loop <cmd> - Loop command 5x",
-        ";spam <count> <msg> - Spam chat",
-        ";kick <player> - Kick player",
-        ";loopkick <player> - Loop kick",
-        ";freeze <player> - Freeze player",
-        ";unfreeze <player> - Unfreeze",
-        ";chat <msg> - Send chat message",
-        ";serverhop - Hop to another server",
-        ";rejoin - Rejoin current server",
-        ";help - Show this help",
-        "=== More commands available ===",
-    }
-    return table.concat(commands, "\n")
-end
-
--- ========== COMMAND DISPATCHER ==========
-local commands = {
-    fly = cmdFly,
-    noclip = cmdNoclip,
-    god = cmdGod,
-    ["inf jump"] = cmdInfJump,
-    infjump = cmdInfJump,
-    speed = cmdSpeed,
-    jumppower = cmdJumppower,
-    tp = cmdTP,
-    bring = cmdBring,
-    goto = cmdGoto,
-    tpm = cmdTPM,
-    swp = cmdSetWaypoint,
-    setwaypoint = cmdSetWaypoint,
-    wp = cmdWaypoint,
-    waypoint = cmdWaypoint,
-    delwp = cmdDelWaypoint,
-    deletewaypoint = cmdDelWaypoint,
-    waypoints = cmdWaypoints,
-    bind = cmdBind,
-    unbind = cmdUnbind,
-    keybinds = cmdKeybinds,
-    addalias = cmdAddAlias,
-    aliases = cmdAliases,
-    loop = cmdLoop,
-    spam = cmdSpam,
-    kick = cmdKick,
-    loopkick = cmdLoopKick,
-    freeze = cmdFreeze,
-    unfreeze = cmdUnfreeze,
-    chat = cmdChat,
-    say = cmdChat,
-    serverhop = cmdServerHop,
-    hop = cmdServerHop,
-    rejoin = cmdRejoin,
-    help = cmdHelp,
-}
-
-local function executeCommand(cmd, args)
-    local func = commands[cmd]
-    if func then
-        local result = func(args)
-        if result then
-            Rayfield:Notify({
-                Title = "Command",
-                Content = result,
-                Duration = 3
-            })
+    function Commands.reset(args)
+        local char = LocalPlayer.Character
+        if char then
+            char:BreakJoints()
+            notify("Reset", "Character reset", 2)
+            return "Character reset"
         end
-    else
-        Rayfield:Notify({
-            Title = "Unknown Command",
-            Content = "Type ;help for commands",
-            Duration = 3
-        })
+        return "Failed to reset"
     end
-end
 
--- ========== RAYFIELD GUI ==========
-local Window = Rayfield:CreateWindow({
-    Name = "Infinite Yield FE v" .. currentVersion,
-    Icon = 0,
-    LoadingTitle = "Infinite Yield",
-    LoadingSubtitle = "By Edge, Zwolf, Moon, Toon, Peyton, ATP",
-    Theme = "Default",
-    ConfigurationSaving = {Enabled = true, FolderName = "InfiniteYield", FileName = "Config"},
-    KeySystem = false
-})
-
--- Tabs
-local MainTab = Window:CreateTab("Main", 4483362458)
-local PlayerTab = Window:CreateTab("Player", 4483362458)
-local TeleportTab = Window:CreateTab("Teleport", 4483362458)
-local AdminTab = Window:CreateTab("Admin", 4483362458)
-local SettingsTab = Window:CreateTab("Settings", 4483362458)
-
--- Main Tab
-MainTab:CreateSection("Command Bar")
-MainTab:CreateInput({
-    Name = "Command Input",
-    PlaceholderText = "Type command (e.g., ;fly, ;tp Player)",
-    RemoveTextAfterFocus = false,
-    Flag = "CmdInput",
-    Callback = function(Text)
-        if Text and Text ~= "" then
-            if Text:sub(1, 1) == IY_PREFIX then
-                local args = getArgs(Text:sub(2), 1)
-                local cmd = args[1] and args[1]:lower() or ""
-                table.remove(args, 1)
-                executeCommand(cmd, args)
-            else
-                executeCommand(Text:lower(), {})
+    function Commands.help(args)
+        local categories = {
+            {name = "Movement", cmds = {"fly", "noclip", "god", "inf jump", "speed", "jumppower", "flyspeed"}},
+            {name = "Teleport", cmds = {"tp", "bring", "goto", "tpm", "swp", "wp", "delwp", "waypoints"}},
+            {name = "Admin (May not work)", cmds = {"kick", "freeze", "unfreeze"}},
+            {name = "Utility", cmds = {"bind", "unbind", "keybinds", "addalias", "delalias", "aliases", "chat", "serverhop", "rejoin", "reset", "help"}}
+        }
+        
+        local helpText = "=== INFINITE YIELD V3 (OUTDATED) ===\n⚠️ USE AT YOUR OWN RISK ⚠️\n\n"
+        for _, cat in ipairs(categories) do
+            helpText = helpText .. "\n[" .. cat.name .. "]\n"
+            for _, cmd in ipairs(cat.cmds) do
+                helpText = helpText .. Config.Prefix .. cmd .. "\n"
             end
         end
+        
+        helpText = helpText .. "\n⚠️ WARNING: This script is outdated!\nSome features may not work properly.\nHigh risk of account ban!"
+        
+        notify("Help", "Check console for full command list", 5)
+        print(helpText)
+        warnUser("This script is outdated - use at your own risk!")
+        return "Help printed to console"
     end
-})
 
-MainTab:CreateParagraph({
-    Title = "Quick Info",
-    Content = "Prefix: " .. IY_PREFIX .. "\nType ;help for all commands\nPress INSERT to toggle menu"
-})
+    function Commands.status(args)
+        local status = string.format([[
+=== INFINITE YIELD V3 STATUS ===
+Script Version: 3.0 (Outdated)
+Risk Level: HIGH
 
--- Player Tab
-PlayerTab:CreateSection("Movement")
-PlayerTab:CreateButton({Name = "Fly", Callback = function() executeCommand("fly", {}) end})
-PlayerTab:CreateButton({Name = "Noclip", Callback = function() executeCommand("noclip", {}) end})
-PlayerTab:CreateButton({Name = "God Mode", Callback = function() executeCommand("god", {}) end})
-PlayerTab:CreateButton({Name = "Infinite Jump", Callback = function() executeCommand("inf jump", {}) end})
+Active Features:
+• Fly: %s
+• Noclip: %s
+• God Mode: %s
+• Infinite Jump: %s
 
-PlayerTab:CreateSection("Stats")
-PlayerTab:CreateSlider({Name = "Walk Speed", Range = {16, 500}, Increment = 1, CurrentValue = 16, Flag = "SpeedSlider", Callback = function(v) executeCommand("speed", {tostring(v)}) end})
-PlayerTab:CreateSlider({Name = "Jump Power", Range = {50, 500}, Increment = 1, CurrentValue = 50, Flag = "JumpSlider", Callback = function(v) executeCommand("jumppower", {tostring(v)}) end})
+Settings:
+• Walk Speed: %d
+• Jump Power: %d
+• Fly Speed: %d
+• Prefix: %s
 
--- Teleport Tab
-TeleportTab:CreateSection("Teleport")
-TeleportTab:CreateButton({Name = "Teleport to Mouse", Callback = function() executeCommand("tpm", {}) end})
+⚠️ This script may be detected!
+⚠️ Use at your own risk!
+        ]], Toggles.Flying and "✓" or "✗",
+           Toggles.Noclip and "✓" or "✗",
+           Toggles.God and "✓" or "✗",
+           Toggles.InfiniteJump and "✓" or "✗",
+           Toggles.Speed,
+           Toggles.JumpPower,
+           Toggles.FlySpeed,
+           Config.Prefix)
+        
+        print(status)
+        return "Status printed to console"
+    end
 
-TeleportTab:CreateInput({
-    Name = "Teleport to Player",
-    PlaceholderText = "Player name",
-    RemoveTextAfterFocus = false,
-    Flag = "TPInput",
-    Callback = function(Text)
-        if Text and Text ~= "" then
-            executeCommand("tp", {Text})
+    -- ========== COMMAND DISPATCHER ==========
+    local function executeCommand(cmd, args)
+        -- Check aliases first
+        if Data.Aliases[cmd] then
+            cmd = Data.Aliases[cmd]
+        end
+        
+        local func = Commands[cmd]
+        if func then
+            local result = func(args)
+            if result and type(result) == "string" then
+                print("[IY V3] " .. result)
+            end
+        else
+            notify("Error", "Unknown command: " .. cmd .. "\nType " .. Config.Prefix .. "help", 3)
         end
     end
-})
 
-TeleportTab:CreateInput({
-    Name = "Bring Player",
-    PlaceholderText = "Player name",
-    RemoveTextAfterFocus = false,
-    Flag = "BringInput",
-    Callback = function(Text)
-        if Text and Text ~= "" then
-            executeCommand("bring", {Text})
+    -- ========== KEYBIND HANDLER ==========
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if processed then return end
+        
+        local key = input.KeyCode.Name
+        if key ~= "Unknown" and Data.Keybinds[key] then
+            task.spawn(function()
+                executeCommand(Data.Keybinds[key], {})
+            end)
+        end
+    end)
+
+    -- ========== CHARACTER HANDLER ==========
+    local function onCharacterAdded(char)
+        task.wait(0.5)
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = Toggles.Speed
+            humanoid.JumpPower = Toggles.JumpPower
+        end
+        
+        if Toggles.Flying then
+            task.wait(1)
+            Commands.fly({})
+        end
+        if Toggles.Noclip then
+            task.wait(1)
+            Commands.noclip({})
+        end
+        if Toggles.God then
+            task.wait(1)
+            Commands.god({})
         end
     end
-})
 
-TeleportTab:CreateSection("Waypoints")
-TeleportTab:CreateInput({
-    Name = "Save Waypoint",
-    PlaceholderText = "Waypoint name",
-    RemoveTextAfterFocus = false,
-    Flag = "SaveWP",
-    Callback = function(Text)
-        if Text and Text ~= "" then
-            executeCommand("swp", {Text})
+    LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+    if LocalPlayer.Character then onCharacterAdded(LocalPlayer.Character) end
+
+    -- ========== RAYFIELD GUI V3 ==========
+    local Window = Rayfield:CreateWindow({
+        Name = "Infinite Yield V3 ⚠️ OUTDATED",
+        Icon = 0,
+        LoadingTitle = "Infinite Yield V3",
+        LoadingSubtitle = "⚠️ USE AT YOUR OWN RISK ⚠️",
+        Theme = "Default",
+        ConfigurationSaving = {Enabled = true, FolderName = "InfiniteYieldV3", FileName = "RayfieldConfig"},
+        KeySystem = false
+    })
+
+    -- Create all tabs
+    local tabs = {
+        Main = Window:CreateTab("Main", 4483362458),
+        Movement = Window:CreateTab("Movement", 4483362458),
+        Teleport = Window:CreateTab("Teleport", 4483362458),
+        Waypoints = Window:CreateTab("Waypoints", 4483362458),
+        Keybinds = Window:CreateTab("Keybinds", 4483362458),
+        Admin = Window:CreateTab("Admin", 4483362458),
+        Settings = Window:CreateTab("Settings", 4483362458)
+    }
+
+    -- Main Tab with Warning
+    tabs.Main:CreateSection("⚠️ WARNING ⚠️")
+    tabs.Main:CreateParagraph({
+        Title = "HIGH RISK OF BAN!",
+        Content = "This script is OUTDATED and may be detected by Roblox's anti-cheat.\n\nSome features may not work properly.\nUse at your own risk!"
+    })
+
+    tabs.Main:CreateSection("Command Center")
+    tabs.Main:CreateInput({
+        Name = "Command Bar",
+        PlaceholderText = "Type command... (e.g., " .. Config.Prefix .. "fly)",
+        RemoveTextAfterFocus = false,
+        Flag = "MainCommand",
+        Callback = function(text)
+            if text and text ~= "" then
+                local prefix = text:sub(1, 1)
+                local cmdText = (prefix == Config.Prefix) and text:sub(2) or text
+                local args = getArgs(cmdText)
+                local cmd = table.remove(args, 1)
+                if cmd then executeCommand(cmd:lower(), args) end
+            end
         end
-    end
-})
+    })
 
-TeleportTab:CreateInput({
-    Name = "Go to Waypoint",
-    PlaceholderText = "Waypoint name",
-    RemoveTextAfterFocus = false,
-    Flag = "GoWP",
-    Callback = function(Text)
-        if Text and Text ~= "" then
-            executeCommand("wp", {Text})
+    tabs.Main:CreateParagraph({
+        Title = "Script Status",
+        Content = string.format([[
+Version: 3.0 (OUTDATED)
+Risk Level: 🔴 HIGH
+
+Active Features:
+• Fly: %s
+• Noclip: %s
+• God Mode: %s
+• Infinite Jump: %s
+
+⚠️ This script may be patched!
+⚠️ Your account is at risk!
+        ]], Toggles.Flying and "✓" or "✗",
+           Toggles.Noclip and "✓" or "✗",
+           Toggles.God and "✓" or "✗",
+           Toggles.InfiniteJump and "✓" or "✗")
+    })
+
+    -- Movement Tab
+    tabs.Movement:CreateSection("⚠️ May be detected ⚠️")
+    tabs.Movement:CreateButton({Name = "Fly (Risk: High)", Callback = function() executeCommand("fly", {}) end})
+    tabs.Movement:CreateButton({Name = "Noclip (Risk: High)", Callback = function() executeCommand("noclip", {}) end})
+    tabs.Movement:CreateButton({Name = "God Mode (Risk: Medium)", Callback = function() executeCommand("god", {}) end})
+    tabs.Movement:CreateButton({Name = "Infinite Jump (Risk: Low)", Callback = function() executeCommand("inf jump", {}) end})
+
+    tabs.Movement:CreateSection("Speed Settings")
+    tabs.Movement:CreateSlider({
+        Name = "Walk Speed (Risk: Medium)",
+        Range = {16, 500},
+        Increment = 1,
+        CurrentValue = Toggles.Speed,
+        Flag = "WalkSpeed",
+        Callback = function(v) executeCommand("speed", {tostring(v)}) end
+    })
+
+    tabs.Movement:CreateSlider({
+        Name = "Jump Power (Risk: Low)",
+        Range = {50, 500},
+        Increment = 1,
+        CurrentValue = Toggles.JumpPower,
+        Flag = "JumpPower",
+        Callback = function(v) executeCommand("jumppower", {tostring(v)}) end
+    })
+
+    tabs.Movement:CreateSlider({
+        Name = "Fly Speed (Risk: Medium)",
+        Range = {10, 500},
+        Increment = 5,
+        CurrentValue = Toggles.FlySpeed,
+        Flag = "FlySpeed",
+        Callback = function(v) executeCommand("flyspeed", {tostring(v)}) end
+    })
+
+    -- Teleport Tab
+    tabs.Teleport:CreateSection("⚠️ May be patched ⚠️")
+    tabs.Teleport:CreateButton({Name = "Teleport to Mouse", Callback = function() executeCommand("tpm", {}) end})
+
+    tabs.Teleport:CreateInput({
+        Name = "Teleport to Player",
+        PlaceholderText = "Player name",
+        RemoveTextAfterFocus = false,
+        Flag = "TPPlayer",
+        Callback = function(text)
+            if text and text ~= "" then executeCommand("tp", {text}) end
         end
-    end
-})
+    })
 
--- Admin Tab
-AdminTab:CreateSection("Admin Commands")
-AdminTab:CreateInput({
-    Name = "Kick Player",
-    PlaceholderText = "Player name",
-    RemoveTextAfterFocus = false,
-    Flag = "KickInput",
-    Callback = function(Text)
-        if Text and Text ~= "" then
-            executeCommand("kick", {Text})
+    tabs.Teleport:CreateInput({
+        Name = "Bring Player",
+        PlaceholderText = "Player name",
+        RemoveTextAfterFocus = false,
+        Flag = "BringPlayer",
+        Callback = function(text)
+            if text and text ~= "" then executeCommand("bring", {text}) end
         end
-    end
-})
+    })
 
-AdminTab:CreateInput({
-    Name = "Freeze Player",
-    PlaceholderText = "Player name",
-    RemoveTextAfterFocus = false,
-    Flag = "FreezeInput",
-    Callback = function(Text)
-        if Text and Text ~= "" then
-            executeCommand("freeze", {Text})
+    tabs.Teleport:CreateInput({
+        Name = "Go to Player",
+        PlaceholderText = "Player name",
+        RemoveTextAfterFocus = false,
+        Flag = "GotoPlayer",
+        Callback = function(text)
+            if text and text ~= "" then executeCommand("goto", {text}) end
         end
-    end
-})
+    })
 
-AdminTab:CreateInput({
-    Name = "Unfreeze Player",
-    PlaceholderText = "Player name",
-    RemoveTextAfterFocus = false,
-    Flag = "UnfreezeInput",
-    Callback = function(Text)
-        if Text and Text ~= "" then
-            executeCommand("unfreeze", {Text})
+    -- Waypoints Tab
+    tabs.Waypoints:CreateSection("Waypoints (Mostly Safe)")
+    tabs.Waypoints:CreateInput({
+        Name = "Save Current Position",
+        PlaceholderText = "Waypoint name",
+        RemoveTextAfterFocus = false,
+        Flag = "SaveWaypoint",
+        Callback = function(text)
+            if text and text ~= "" then executeCommand("swp", {text}) end
         end
-    end
-})
+    })
 
-AdminTab:CreateButton({Name = "Loop Kick Player (10 sec)", Callback = function()
-    local player = Rayfield:Get("KickInput")
-    if player and player ~= "" then
-        executeCommand("loopkick", {player})
-    end
-end})
-
--- Settings Tab
-SettingsTab:CreateSection("General")
-SettingsTab:CreateInput({
-    Name = "Change Prefix",
-    PlaceholderText = "New prefix (e.g., !)",
-    RemoveTextAfterFocus = false,
-    Flag = "PrefixInput",
-    Callback = function(Text)
-        if Text and Text ~= "" then
-            IY_PREFIX = Text:sub(1, 1)
-            Rayfield:Notify({Title = "Prefix", Content = "Changed to " .. IY_PREFIX, Duration = 2})
+    tabs.Waypoints:CreateInput({
+        Name = "Teleport to Waypoint",
+        PlaceholderText = "Waypoint name",
+        RemoveTextAfterFocus = false,
+        Flag = "GotoWaypoint",
+        Callback = function(text)
+            if text and text ~= "" then executeCommand("wp", {text}) end
         end
-    end
-})
+    })
 
-SettingsTab:CreateButton({Name = "Server Hop", Callback = function() executeCommand("serverhop", {}) end})
-SettingsTab:CreateButton({Name = "Rejoin", Callback = function() executeCommand("rejoin", {}) end})
-SettingsTab:CreateButton({Name = "Show Help", Callback = function() executeCommand("help", {}) end})
+    tabs.Waypoints:CreateInput({
+        Name = "Delete Waypoint",
+        PlaceholderText = "Waypoint name",
+        RemoveTextAfterFocus = false,
+        Flag = "DelWaypoint",
+        Callback = function(text)
+            if text and text ~= "" then executeCommand("delwp", {text}) end
+        end
+    })
 
--- ========== KEYBIND HANDLER ==========
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
+    tabs.Waypoints:CreateButton({Name = "List All Waypoints", Callback = function() executeCommand("waypoints", {}) end})
+
+    -- Keybinds Tab
+    tabs.Keybinds:CreateSection("Keybinds (May conflict)")
+    tabs.Keybinds:CreateInput({
+        Name = "Bind Command",
+        PlaceholderText = "Key Command (e.g., G fly)",
+        RemoveTextAfterFocus = false,
+        Flag = "BindCommand",
+        Callback = function(text)
+            if text and text ~= "" then
+                local args = getArgs(text)
+                if #args >= 2 then
+                    executeCommand("bind", args)
+                end
+            end
+        end
+    })
+
+    tabs.Keybinds:CreateInput({
+        Name = "Unbind Key",
+        PlaceholderText = "Key (e.g., G)",
+        RemoveTextAfterFocus = false,
+        Flag = "UnbindKey",
+        Callback = function(text)
+            if text and text ~= "" then executeCommand("unbind", {text}) end
+        end
+    })
+
+    tabs.Keybinds:CreateButton({Name = "List All Keybinds", Callback = function() executeCommand("keybinds", {}) end})
+
+    -- Admin Tab
+    tabs.Admin:CreateSection("⚠️ PROBABLY PATCHED ⚠️")
+    tabs.Admin:CreateParagraph({
+        Title = "WARNING",
+        Content = "Admin commands may not work in most games!\nThese are included for compatibility only."
+    })
+
+    tabs.Admin:CreateInput({
+        Name = "Kick Player (Probably broken)",
+        PlaceholderText = "Player name",
+        RemoveTextAfterFocus = false,
+        Flag = "KickPlayer",
+        Callback = function(text)
+            if text and text ~= "" then executeCommand("kick", {text}) end
+        end
+    })
+
+    tabs.Admin:CreateInput({
+        Name = "Freeze Player (Maybe broken)",
+        PlaceholderText = "Player name",
+        RemoveTextAfterFocus = false,
+        Flag = "FreezePlayer",
+        Callback = function(text)
+            if text and text ~= "" then executeCommand("freeze", {text}) end
+        end
+    })
+
+    tabs.Admin:CreateInput({
+        Name = "Unfreeze Player",
+        PlaceholderText = "Player name",
+        RemoveTextAfterFocus = false,
+        Flag = "UnfreezePlayer",
+        Callback = function(text)
+            if text and text ~= "" then executeCommand("unfreeze", {text}) end
+        end
+    })
+
+    -- Settings Tab
+    tabs.Settings:CreateSection("General Settings")
+    tabs.Settings:CreateInput({
+        Name = "Command Prefix",
+        PlaceholderText = "Current: " .. Config.Prefix,
+        RemoveTextAfterFocus = false,
+        Flag = "PrefixSetting",
+        Callback = function(text)
+            if text and text ~= "" then
+                Config.Prefix = text:sub(1, 1)
+                saveData()
+                notify("Settings", "Prefix changed to " .. Config.Prefix, 2)
+            end
+        end
+    })
+
+    tabs.Settings:CreateToggle({
+        Name = "Enable Notifications",
+        CurrentValue = Config.Notifications,
+        Flag = "Notifications",
+        Callback = function(v) Config.Notifications = v; saveData() end
+    })
+
+    tabs.Settings:CreateToggle({
+        Name = "Show Warnings",
+        CurrentValue = Config.ShowWarnings,
+        Flag = "ShowWarnings",
+        Callback = function(v) Config.ShowWarnings = v; saveData() end
+    })
+
+    tabs.Settings:CreateButton({Name = "Server Hop (May not work)", Callback = function() executeCommand("serverhop", {}) end})
+    tabs.Settings:CreateButton({Name = "Rejoin Server (May not work)", Callback = function() executeCommand("rejoin", {}) end})
+    tabs.Settings:CreateButton({Name = "Reset Character", Callback = function() executeCommand("reset", {}) end})
+    tabs.Settings:CreateButton({Name = "Show Help", Callback = function() executeCommand("help", {}) end})
+    tabs.Settings:CreateButton({Name = "Show Status", Callback = function() executeCommand("status", {}) end})
+
+    -- Info section
+    tabs.Settings:CreateSection("About")
+    tabs.Settings:CreateParagraph({
+        Title = "Infinite Yield V3 ⚠️ OUTDATED",
+        Content = string.format([[
+Version: 3.0
+Status: OUTDATED - HIGH RISK
+Original by: Edge, Zwolf, Moon, Toon, Peyton, ATP
+Rayfield Conversion: V3
+
+⚠️ WARNING ⚠️
+This script is outdated and may be detected!
+Using this script puts your account at risk of being banned.
+Some features may not work properly.
+
+Proceed with extreme caution!
+
+Press INSERT to toggle menu
+]], table.count(Commands))
+    })
+
+    -- ========== INITIALIZATION ==========
+    loadData()
+    saveData()
+
+    -- Final warning
+    task.wait(1)
+    warnUser("THIS SCRIPT IS OUTDATED - HIGH RISK OF BAN!")
+    warnUser("Some features may not work properly!")
     
-    local key = input.KeyCode.Name
-    if key ~= "Unknown" and IY_KEYBINDS[key] then
-        executeCommand(IY_KEYBINDS[key], {})
-    end
-end)
-
--- ========== CHARACTER HANDLER ==========
-Players.LocalPlayer.CharacterAdded:Connect(function(char)
-    task.wait(0.5)
-    local humanoid = char:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid.WalkSpeed = IY_WALK_SPEED
-        humanoid.JumpPower = IY_JUMP_POWER
-    end
-    
-    if IY_FLYING then
-        task.wait(1)
-        executeCommand("fly", {})
-    end
-    if IY_NOCLIP then
-        task.wait(1)
-        executeCommand("noclip", {})
-    end
-    if IY_GOD then
-        task.wait(1)
-        executeCommand("god", {})
-    end
-end)
-
--- ========== LOAD SAVED DATA ==========
-if makefolder then pcall(function() makefolder("infiniteyield") end) end
-
-if writefile and isfile then
-    if isfile("infiniteyield/keybinds.txt") then
-        IY_KEYBINDS = HttpService:JSONDecode(readfile("infiniteyield/keybinds.txt"))
-    end
-    if isfile("infiniteyield/aliases.txt") then
-        IY_ALIASES = HttpService:JSONDecode(readfile("infiniteyield/aliases.txt"))
-    end
-    if isfile("infiniteyield/waypoints.txt") then
-        IY_WAYPOINTS = HttpService:JSONDecode(readfile("infiniteyield/waypoints.txt"))
-    end
+    notify("Infinite Yield V3", "⚠️ OUTDATED SCRIPT - USE AT YOUR OWN RISK ⚠️\nType " .. Config.Prefix .. "help", 8)
+    print("=== INFINITE YIELD V3 (OUTDATED) ===")
+    print("⚠️ WARNING: This script is outdated!")
+    print("⚠️ High risk of account ban!")
+    print("⚠️ Some features may not work!")
+    print("Prefix: " .. Config.Prefix)
+    print("Type '" .. Config.Prefix .. "help' for commands")
+    print("Press INSERT to open Rayfield menu")
 end
 
--- ========== INITIAL NOTIFICATION ==========
-Rayfield:Notify({
-    Title = "Infinite Yield FE v" .. currentVersion,
-    Content = "Loaded! Type ;help for commands",
-    Duration = 5
-})
-
-print("Infinite Yield FE v" .. currentVersion .. " loaded! Press INSERT for Rayfield menu")
-print("Type ';help' for a list of commands")
+-- Wait for user choice (with timeout)
+task.wait(0.1)
