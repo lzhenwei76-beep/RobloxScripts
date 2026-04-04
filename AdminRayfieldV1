@@ -1,26 +1,38 @@
--- Admin Script V3 - Rayfield GUI
--- WARNING: This script is outdated and may be detected!
--- Version 3.0 - With Risk Warning
+-- Admin Script V3 - Fixed Version
+-- WARNING: This script is outdated! Kick/Ban commands removed (patched by Roblox)
 
 if getgenv().ADMIN_V3_LOADED then return end
 getgenv().ADMIN_V3_LOADED = true
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- ========== LOAD RAYFIELD FIRST ==========
+-- ========== LOAD RAYFIELD ==========
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/lzhenwei76-beep/RayfieldCopy/refs/heads/main/source.lua'))()
 
 -- ========== SERVICES ==========
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local VirtualUser = game:GetService("VirtualUser")
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
+
+-- ========== PLAYER LIST FOR BUTTONS ==========
+local PlayerList = {}
+
+local function updatePlayerList()
+    PlayerList = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(PlayerList, player.Name)
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
+updatePlayerList()
 
 -- ========== WARNING POPUP ==========
 local WarningGui = Instance.new("ScreenGui")
@@ -36,9 +48,8 @@ end
 
 -- Warning Frame
 local WarningFrame = Instance.new("Frame")
-WarningFrame.Name = "WarningFrame"
-WarningFrame.Size = UDim2.new(0, 550, 0, 400)
-WarningFrame.Position = UDim2.new(0.5, -275, 0.5, -200)
+WarningFrame.Size = UDim2.new(0, 500, 0, 350)
+WarningFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
 WarningFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 WarningFrame.BackgroundTransparency = 0.05
 WarningFrame.BorderSizePixel = 0
@@ -57,7 +68,7 @@ WarningCorner.Parent = WarningFrame
 
 -- Header
 local WarningHeader = Instance.new("Frame")
-WarningHeader.Size = UDim2.new(1, 0, 0, 60)
+WarningHeader.Size = UDim2.new(1, 0, 0, 50)
 WarningHeader.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 WarningHeader.BackgroundTransparency = 0.15
 WarningHeader.BorderSizePixel = 0
@@ -71,7 +82,6 @@ WarningIcon.Font = Enum.Font.GothamBold
 WarningIcon.TextSize = 28
 WarningIcon.Text = "⚠️"
 WarningIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-WarningIcon.TextXAlignment = Enum.TextXAlignment.Center
 WarningIcon.Parent = WarningHeader
 
 local WarningTitle = Instance.new("TextLabel")
@@ -79,93 +89,89 @@ WarningTitle.Size = UDim2.new(1, -70, 1, 0)
 WarningTitle.Position = UDim2.new(0, 70, 0, 0)
 WarningTitle.BackgroundTransparency = 1
 WarningTitle.Font = Enum.Font.GothamBold
-WarningTitle.TextSize = 20
+WarningTitle.TextSize = 18
 WarningTitle.Text = "ADMIN SCRIPT V3 - OUTDATED"
 WarningTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 WarningTitle.TextXAlignment = Enum.TextXAlignment.Left
 WarningTitle.Parent = WarningHeader
 
--- Warning Content
+-- Content
 local WarningContent = Instance.new("Frame")
-WarningContent.Size = UDim2.new(1, -20, 1, -80)
-WarningContent.Position = UDim2.new(0, 10, 0, 70)
+WarningContent.Size = UDim2.new(1, -20, 1, -70)
+WarningContent.Position = UDim2.new(0, 10, 0, 60)
 WarningContent.BackgroundTransparency = 1
 WarningContent.Parent = WarningFrame
 
--- Risk Message
 local RiskLabel = Instance.new("TextLabel")
-RiskLabel.Size = UDim2.new(1, 0, 0, 50)
-RiskLabel.Position = UDim2.new(0, 0, 0, 0)
+RiskLabel.Size = UDim2.new(1, 0, 0, 40)
 RiskLabel.BackgroundTransparency = 1
 RiskLabel.Font = Enum.Font.GothamBold
-RiskLabel.TextSize = 18
+RiskLabel.TextSize = 16
 RiskLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
 RiskLabel.Text = "🔴 HIGH RISK OF BAN!"
 RiskLabel.TextXAlignment = Enum.TextXAlignment.Center
 RiskLabel.Parent = WarningContent
 
 local RiskDesc = Instance.new("TextLabel")
-RiskDesc.Size = UDim2.new(1, 0, 0, 60)
-RiskDesc.Position = UDim2.new(0, 0, 0, 40)
+RiskDesc.Size = UDim2.new(1, 0, 0, 50)
+RiskDesc.Position = UDim2.new(0, 0, 0, 35)
 RiskDesc.BackgroundTransparency = 1
 RiskDesc.Font = Enum.Font.SourceSans
-RiskDesc.TextSize = 14
+RiskDesc.TextSize = 13
 RiskDesc.TextColor3 = Color3.fromRGB(200, 200, 200)
-RiskDesc.Text = "This admin script is outdated and may be detected by Roblox's anti-cheat.\nUsing this script puts your account at significant risk of being banned.\nProceed at your own risk!"
+RiskDesc.Text = "This script is outdated. Kick/Ban/Freeze commands have been PATCHED by Roblox.\nThey will NOT work anymore."
 RiskDesc.TextWrapped = true
 RiskDesc.TextXAlignment = Enum.TextXAlignment.Center
 RiskDesc.Parent = WarningContent
 
--- Outdated Features
-local OutdatedLabel = Instance.new("TextLabel")
-OutdatedLabel.Size = UDim2.new(1, 0, 0, 30)
-OutdatedLabel.Position = UDim2.new(0, 0, 0, 105)
-OutdatedLabel.BackgroundTransparency = 1
-OutdatedLabel.Font = Enum.Font.GothamBold
-OutdatedLabel.TextSize = 14
-OutdatedLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-OutdatedLabel.Text = "⚠️ BROKEN / PATCHED FEATURES:"
-OutdatedLabel.TextXAlignment = Enum.TextXAlignment.Center
-OutdatedLabel.Parent = WarningContent
-
-local BrokenFeatures = Instance.new("TextLabel")
-BrokenFeatures.Size = UDim2.new(1, 0, 0, 100)
-BrokenFeatures.Position = UDim2.new(0, 0, 0, 135)
-BrokenFeatures.BackgroundTransparency = 1
-BrokenFeatures.Font = Enum.Font.SourceSans
-BrokenFeatures.TextSize = 13
-BrokenFeatures.TextColor3 = Color3.fromRGB(150, 150, 150)
-BrokenFeatures.Text = "• Kick / Ban Commands (Patched in most games)\n• Freeze / Jail Commands (May not work)\n• ESP / Visual Features (Broken)\n• Loop / Spam Functions (Detected)\n• Server Hop (May not work on some executors)\n• Some Teleport Commands (Patched)"
-BrokenFeatures.TextXAlignment = Enum.TextXAlignment.Center
-BrokenFeatures.Parent = WarningContent
-
--- Working Features
 local WorkingLabel = Instance.new("TextLabel")
 WorkingLabel.Size = UDim2.new(1, 0, 0, 30)
-WorkingLabel.Position = UDim2.new(0, 0, 0, 240)
+WorkingLabel.Position = UDim2.new(0, 0, 0, 90)
 WorkingLabel.BackgroundTransparency = 1
 WorkingLabel.Font = Enum.Font.GothamBold
 WorkingLabel.TextSize = 14
 WorkingLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-WorkingLabel.Text = "✅ PARTIALLY WORKING:"
+WorkingLabel.Text = "✅ STILL WORKING:"
 WorkingLabel.TextXAlignment = Enum.TextXAlignment.Center
 WorkingLabel.Parent = WarningContent
 
 local WorkingFeatures = Instance.new("TextLabel")
-WorkingFeatures.Size = UDim2.new(1, 0, 0, 60)
-WorkingFeatures.Position = UDim2.new(0, 0, 0, 270)
+WorkingFeatures.Size = UDim2.new(1, 0, 0, 80)
+WorkingFeatures.Position = UDim2.new(0, 0, 0, 120)
 WorkingFeatures.BackgroundTransparency = 1
 WorkingFeatures.Font = Enum.Font.SourceSans
-WorkingFeatures.TextSize = 13
+WorkingFeatures.TextSize = 12
 WorkingFeatures.TextColor3 = Color3.fromRGB(150, 200, 150)
-WorkingFeatures.Text = "• Fly / Noclip (May work in some games)\n• Speed / Jump Power (Works)\n• TP to Player / Mouse (May work)\n• Waypoints (Works)\n• Chat Commands (Works)"
+WorkingFeatures.Text = "• Fly / Noclip\n• Speed / Jump Power\n• TP to Player / Mouse\n• Waypoints (Save/Load)\n• Keybinds\n• Chat Commands"
 WorkingFeatures.TextXAlignment = Enum.TextXAlignment.Center
 WorkingFeatures.Parent = WarningContent
 
+local BrokenLabel = Instance.new("TextLabel")
+BrokenLabel.Size = UDim2.new(1, 0, 0, 30)
+BrokenLabel.Position = UDim2.new(0, 0, 0, 205)
+BrokenLabel.BackgroundTransparency = 1
+BrokenLabel.Font = Enum.Font.GothamBold
+BrokenLabel.TextSize = 14
+BrokenLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+BrokenLabel.Text = "❌ PATCHED / BROKEN:"
+BrokenLabel.TextXAlignment = Enum.TextXAlignment.Center
+BrokenLabel.Parent = WarningContent
+
+local BrokenFeatures = Instance.new("TextLabel")
+BrokenFeatures.Size = UDim2.new(1, 0, 0, 60)
+BrokenFeatures.Position = UDim2.new(0, 0, 0, 235)
+BrokenFeatures.BackgroundTransparency = 1
+BrokenFeatures.Font = Enum.Font.SourceSans
+BrokenFeatures.TextSize = 12
+BrokenFeatures.TextColor3 = Color3.fromRGB(200, 100, 100)
+BrokenFeatures.Text = "• Kick / Ban (Patched by Roblox)\n• Freeze / Jail (Patched)\n• ESP (Broken)\n• Loop / Spam (Detected)"
+BrokenFeatures.TextXAlignment = Enum.TextXAlignment.Center
+BrokenFeatures.Parent = WarningContent
+
 -- Buttons
 local ButtonFrame = Instance.new("Frame")
-ButtonFrame.Size = UDim2.new(1, -20, 0, 45)
-ButtonFrame.Position = UDim2.new(0, 10, 1, -55)
+ButtonFrame.Size = UDim2.new(1, -20, 0, 40)
+ButtonFrame.Position = UDim2.new(0, 10, 1, -50)
 ButtonFrame.BackgroundTransparency = 1
 ButtonFrame.Parent = WarningFrame
 
@@ -194,7 +200,7 @@ CancelButton.BorderSizePixel = 0
 CancelButton.Font = Enum.Font.GothamBold
 CancelButton.TextSize = 14
 CancelButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-CancelButton.Text = "✗ UNLOAD SCRIPT"
+CancelButton.Text = "✗ UNLOAD"
 CancelButton.Parent = ButtonFrame
 
 local CancelCorner = Instance.new("UICorner")
@@ -205,7 +211,7 @@ CancelCorner.Parent = CancelButton
 WarningFrame.BackgroundTransparency = 1
 WarningFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.3, true)
 task.wait(0.2)
-WarningFrame:TweenSize(UDim2.new(0, 550, 0, 400), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.5, true)
+WarningFrame:TweenSize(UDim2.new(0, 500, 0, 350), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.5, true)
 WarningFrame.BackgroundTransparency = 0.05
 
 -- ========== ADMIN SCRIPT CORE ==========
@@ -225,7 +231,8 @@ local Admin = {
         FlySpeed = 50
     },
     FlyConnection = nil,
-    FlyBV = nil
+    FlyBV = nil,
+    JumpConnection = nil
 }
 
 -- Helper Functions
@@ -239,16 +246,6 @@ local function findPlayer(input)
     return nil
 end
 
-local function getAllPlayers()
-    local list = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            table.insert(list, player)
-        end
-    end
-    return list
-end
-
 local function notify(title, content, duration)
     pcall(function()
         Rayfield:Notify({Title = title, Content = content, Duration = duration or 3})
@@ -256,15 +253,15 @@ local function notify(title, content, duration)
 end
 
 local function warnUser(message)
-    print("[ADMIN V3 WARNING] " .. message)
+    print("[WARNING] " .. message)
     pcall(function()
         Rayfield:Notify({Title = "⚠️ WARNING", Content = message, Duration = 4})
     end)
 end
 
--- ========== ADMIN COMMANDS ==========
+-- ========== COMMANDS ==========
 
--- Movement Commands
+-- Fly
 function Admin.Commands.fly()
     Admin.Toggles.Flying = not Admin.Toggles.Flying
     
@@ -285,9 +282,7 @@ function Admin.Commands.fly()
         humanoid.AutoRotate = false
         
         Admin.FlyConnection = RunService.RenderStepped:Connect(function()
-            if not Admin.Toggles.Flying or not hrp or not hrp.Parent then
-                return
-            end
+            if not Admin.Toggles.Flying or not hrp or not hrp.Parent then return end
             local cam = workspace.CurrentCamera
             local move = Vector3.new(0, 0, 0)
             if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + cam.CFrame.LookVector end
@@ -299,7 +294,7 @@ function Admin.Commands.fly()
             Admin.FlyBV.Velocity = move.Magnitude > 0 and move.Unit * Admin.Toggles.FlySpeed or Vector3.new(0, 0, 0)
         end)
         
-        notify("Fly", "Enabled (Speed: " .. Admin.Toggles.FlySpeed .. ")", 2)
+        notify("Fly", "✓ Enabled (Speed: " .. Admin.Toggles.FlySpeed .. ")", 2)
     else
         if Admin.FlyConnection then Admin.FlyConnection:Disconnect() end
         local char = LocalPlayer.Character
@@ -312,10 +307,11 @@ function Admin.Commands.fly()
                 humanoid.AutoRotate = true
             end
         end
-        notify("Fly", "Disabled", 2)
+        notify("Fly", "✗ Disabled", 2)
     end
 end
 
+-- Noclip
 function Admin.Commands.noclip()
     Admin.Toggles.Noclip = not Admin.Toggles.Noclip
     
@@ -334,14 +330,15 @@ function Admin.Commands.noclip()
         LocalPlayer.CharacterAdded:Connect(function()
             if Admin.Toggles.Noclip then setCollision(false) end
         end)
-        notify("Noclip", "Enabled (May be unstable)", 2)
+        notify("Noclip", "✓ Enabled", 2)
         warnUser("Noclip may be detected")
     else
         setCollision(true)
-        notify("Noclip", "Disabled", 2)
+        notify("Noclip", "✗ Disabled", 2)
     end
 end
 
+-- God Mode
 function Admin.Commands.god()
     Admin.Toggles.God = not Admin.Toggles.God
     
@@ -350,7 +347,7 @@ function Admin.Commands.god()
             local humanoid = char:FindFirstChild("Humanoid")
             if humanoid then
                 humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-                    if Admin.Toggles.God and humanoid then
+                    if Admin.Toggles.God and humanoid and humanoid.Health > 0 then
                         humanoid.Health = humanoid.MaxHealth
                     end
                 end)
@@ -358,34 +355,37 @@ function Admin.Commands.god()
         end
         setupGod(LocalPlayer.Character)
         LocalPlayer.CharacterAdded:Connect(setupGod)
-        notify("God Mode", "Enabled (May not work)", 2)
+        notify("God Mode", "✓ Enabled", 2)
     else
-        notify("God Mode", "Disabled", 2)
+        notify("God Mode", "✗ Disabled", 2)
     end
 end
 
+-- Infinite Jump
 function Admin.Commands.infJump()
     Admin.Toggles.InfiniteJump = not Admin.Toggles.InfiniteJump
     
     if Admin.Toggles.InfiniteJump then
-        local connection
-        connection = UserInputService.JumpRequest:Connect(function()
+        if Admin.JumpConnection then Admin.JumpConnection:Disconnect() end
+        Admin.JumpConnection = UserInputService.JumpRequest:Connect(function()
             if Admin.Toggles.InfiniteJump and LocalPlayer.Character then
                 local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-                if humanoid then
+                if humanoid and humanoid.Health > 0 then
                     humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
                 end
             end
         end)
-        notify("Infinite Jump", "Enabled", 2)
+        notify("Infinite Jump", "✓ Enabled", 2)
     else
-        notify("Infinite Jump", "Disabled", 2)
+        if Admin.JumpConnection then Admin.JumpConnection:Disconnect() end
+        notify("Infinite Jump", "✗ Disabled", 2)
     end
 end
 
+-- Speed
 function Admin.Commands.speed(args)
     local speed = tonumber(args[1])
-    if not speed then return "Usage: ;speed <number>" end
+    if not speed then notify("Speed", "Usage: ;speed <number>", 3); return end
     Admin.Toggles.Speed = math.clamp(speed, 16, 500)
     if LocalPlayer.Character then
         local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
@@ -395,9 +395,10 @@ function Admin.Commands.speed(args)
     if Admin.Toggles.Speed > 100 then warnUser("High speed may trigger anti-cheat") end
 end
 
+-- Jump Power
 function Admin.Commands.jumppower(args)
     local power = tonumber(args[1])
-    if not power then return "Usage: ;jumppower <number>" end
+    if not power then notify("Jump Power", "Usage: ;jumppower <number>", 3); return end
     Admin.Toggles.JumpPower = math.clamp(power, 50, 500)
     if LocalPlayer.Character then
         local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
@@ -406,134 +407,135 @@ function Admin.Commands.jumppower(args)
     notify("Jump Power", "Set to " .. Admin.Toggles.JumpPower, 2)
 end
 
+-- Fly Speed
 function Admin.Commands.flyspeed(args)
     local speed = tonumber(args[1])
-    if not speed then return "Usage: ;flyspeed <number>" end
+    if not speed then notify("Fly Speed", "Usage: ;flyspeed <number>", 3); return end
     Admin.Toggles.FlySpeed = math.clamp(speed, 10, 500)
     notify("Fly Speed", "Set to " .. Admin.Toggles.FlySpeed, 2)
 end
 
--- Teleport Commands
+-- TP to Player
 function Admin.Commands.tp(args)
-    local target = args[1] and findPlayer(args[1])
-    if not target then return "Usage: ;tp <player>" end
+    if not args[1] then notify("TP", "Usage: ;tp <player>", 3); return end
+    local target = findPlayer(args[1])
+    if not target then notify("TP", "Player not found", 2); return end
     
     local targetChar = target.Character
     local localChar = LocalPlayer.Character
-    if not targetChar or not localChar then return "Character not found" end
+    if not targetChar or not localChar then notify("TP", "Character not found", 2); return end
     
     local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
     local localRoot = localChar:FindFirstChild("HumanoidRootPart")
-    if not targetRoot or not localRoot then return "Character not ready" end
+    if not targetRoot or not localRoot then notify("TP", "Character not ready", 2); return end
     
     localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 5)
-    notify("Teleport", "Teleported to " .. target.Name, 2)
+    notify("TP", "Teleported to " .. target.Name, 2)
 end
 
+-- Bring Player
 function Admin.Commands.bring(args)
-    local target = args[1] and findPlayer(args[1])
-    if not target then return "Usage: ;bring <player>" end
+    if not args[1] then notify("Bring", "Usage: ;bring <player>", 3); return end
+    local target = findPlayer(args[1])
+    if not target then notify("Bring", "Player not found", 2); return end
     
     local targetChar = target.Character
     local localChar = LocalPlayer.Character
-    if not targetChar or not localChar then return "Character not found" end
+    if not targetChar or not localChar then notify("Bring", "Character not found", 2); return end
     
     local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
     local localRoot = localChar:FindFirstChild("HumanoidRootPart")
-    if not targetRoot or not localRoot then return "Character not ready" end
+    if not targetRoot or not localRoot then notify("Bring", "Character not ready", 2); return end
     
     targetRoot.CFrame = localRoot.CFrame * CFrame.new(0, 0, 5)
     notify("Bring", "Brought " .. target.Name, 2)
 end
 
+-- Goto Player
 function Admin.Commands.goto(args)
-    local target = args[1] and findPlayer(args[1])
-    if not target then return "Usage: ;goto <player>" end
+    if not args[1] then notify("Goto", "Usage: ;goto <player>", 3); return end
+    local target = findPlayer(args[1])
+    if not target then notify("Goto", "Player not found", 2); return end
     
     local targetChar = target.Character
     local localChar = LocalPlayer.Character
-    if not targetChar or not localChar then return "Character not found" end
+    if not targetChar or not localChar then notify("Goto", "Character not found", 2); return end
     
     local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
     local localRoot = localChar:FindFirstChild("HumanoidRootPart")
-    if not targetRoot or not localRoot then return "Character not ready" end
+    if not targetRoot or not localRoot then notify("Goto", "Character not ready", 2); return end
     
     localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 5)
     notify("Goto", "Went to " .. target.Name, 2)
 end
 
+-- TP to Mouse
 function Admin.Commands.tpm()
     local localChar = LocalPlayer.Character
-    if not localChar then return end
+    if not localChar then notify("TPM", "Character not found", 2); return end
     local localRoot = localChar:FindFirstChild("HumanoidRootPart")
-    if not localRoot then return end
+    if not localRoot then notify("TPM", "Character not ready", 2); return end
     localRoot.CFrame = CFrame.new(Mouse.Hit.p)
-    notify("Teleport", "Teleported to mouse", 2)
+    notify("TPM", "Teleported to mouse", 2)
 end
 
--- Waypoint Commands
+-- Waypoints
 function Admin.Commands.setwaypoint(args)
-    local name = args[1]
-    if not name then return "Usage: ;swp <name>" end
-    
+    if not args[1] then notify("Waypoint", "Usage: ;swp <name>", 3); return end
     local localChar = LocalPlayer.Character
-    if not localChar then return end
+    if not localChar then notify("Waypoint", "Character not found", 2); return end
     local localRoot = localChar:FindFirstChild("HumanoidRootPart")
-    if not localRoot then return end
-    
-    Admin.Waypoints[name] = localRoot.Position
-    notify("Waypoint", "Saved '" .. name .. "'", 2)
+    if not localRoot then notify("Waypoint", "Character not ready", 2); return end
+    Admin.Waypoints[args[1]] = localRoot.Position
+    notify("Waypoint", "Saved '" .. args[1] .. "'", 2)
 end
 
 function Admin.Commands.waypoint(args)
-    local name = args[1]
-    if not name then return "Usage: ;wp <name>" end
-    
-    local pos = Admin.Waypoints[name]
-    if not pos then return "Waypoint not found" end
-    
+    if not args[1] then notify("Waypoint", "Usage: ;wp <name>", 3); return end
+    local pos = Admin.Waypoints[args[1]]
+    if not pos then notify("Waypoint", "Waypoint not found", 2); return end
     local localChar = LocalPlayer.Character
-    if not localChar then return end
+    if not localChar then notify("Waypoint", "Character not found", 2); return end
     local localRoot = localChar:FindFirstChild("HumanoidRootPart")
-    if not localRoot then return end
-    
+    if not localRoot then notify("Waypoint", "Character not ready", 2); return end
     localRoot.CFrame = CFrame.new(pos)
-    notify("Waypoint", "Teleported to '" .. name .. "'", 2)
+    notify("Waypoint", "Teleported to '" .. args[1] .. "'", 2)
 end
 
 function Admin.Commands.delwaypoint(args)
-    local name = args[1]
-    if not name then return "Usage: ;delwp <name>" end
-    if not Admin.Waypoints[name] then return "Waypoint not found" end
-    Admin.Waypoints[name] = nil
-    notify("Waypoint", "Deleted '" .. name .. "'", 2)
+    if not args[1] then notify("Waypoint", "Usage: ;delwp <name>", 3); return end
+    if not Admin.Waypoints[args[1]] then notify("Waypoint", "Waypoint not found", 2); return end
+    Admin.Waypoints[args[1]] = nil
+    notify("Waypoint", "Deleted '" .. args[1] .. "'", 2)
 end
 
 function Admin.Commands.waypoints()
     local list = "=== Waypoints ===\n"
     for name, pos in pairs(Admin.Waypoints) do
-        list = list .. string.format("• %s → (%.1f, %.1f, %.1f)\n", name, pos.X, pos.Y, pos.Z)
+        list = list .. string.format("• %s → (%.0f, %.0f, %.0f)\n", name, pos.X, pos.Y, pos.Z)
     end
     if list == "=== Waypoints ===\n" then list = "No waypoints saved" end
     print(list)
-    notify("Waypoints", "Check console for list", 2)
+    notify("Waypoints", "Check console (F9)", 2)
 end
 
--- Keybind Commands
+-- Keybinds
 function Admin.Commands.bind(args)
-    if not args[1] or not args[2] then return "Usage: ;bind <key> <command>" end
+    if not args[1] or not args[2] then notify("Bind", "Usage: ;bind <key> <command>", 3); return end
     local key = args[1]:upper()
     local command = table.concat(args, " ", 2)
     Admin.Keybinds[key] = command
-    notify("Keybind", key .. " → " .. command, 2)
+    notify("Bind", key .. " → " .. command, 2)
 end
 
 function Admin.Commands.unbind(args)
-    if not args[1] then return "Usage: ;unbind <key>" end
+    if not args[1] then notify("Unbind", "Usage: ;unbind <key>", 3); return end
     local key = args[1]:upper()
     if Admin.Keybinds[key] then
         Admin.Keybinds[key] = nil
-        notify("Keybind", "Unbound " .. key, 2)
+        notify("Unbind", "Unbound " .. key, 2)
+    else
+        notify("Unbind", "No bind found for " .. key, 2)
     end
 end
 
@@ -544,16 +546,14 @@ function Admin.Commands.keybinds()
     end
     if list == "=== Keybinds ===\n" then list = "No keybinds set" end
     print(list)
-    notify("Keybinds", "Check console for list", 2)
+    notify("Keybinds", "Check console (F9)", 2)
 end
 
--- Alias Commands
+-- Aliases
 function Admin.Commands.addalias(args)
-    if not args[1] or not args[2] then return "Usage: ;addalias <alias> <command>" end
-    local alias = args[1]:lower()
-    local command = args[2]:lower()
-    Admin.Aliases[alias] = command
-    notify("Alias", alias .. " → " .. command, 2)
+    if not args[1] or not args[2] then notify("Alias", "Usage: ;addalias <alias> <command>", 3); return end
+    Admin.Aliases[args[1]:lower()] = args[2]:lower()
+    notify("Alias", args[1] .. " → " .. args[2], 2)
 end
 
 function Admin.Commands.aliases()
@@ -563,76 +563,45 @@ function Admin.Commands.aliases()
     end
     if list == "=== Aliases ===\n" then list = "No aliases set" end
     print(list)
-    notify("Aliases", "Check console for list", 2)
+    notify("Aliases", "Check console (F9)", 2)
 end
 
--- Admin Commands (May not work)
-function Admin.Commands.kick(args)
-    if not args[1] then return "Usage: ;kick <player>" end
-    local target = findPlayer(args[1])
-    if not target then return "Player not found" end
-    local reason = args[2] or "Kicked by Admin Script"
-    warnUser("Kick command may not work in this game")
-    pcall(function() target:Kick(reason) end)
-    notify("Kick", "Attempted to kick " .. target.Name, 2)
-end
-
-function Admin.Commands.freeze(args)
-    if not args[1] then return "Usage: ;freeze <player>" end
-    local target = findPlayer(args[1])
-    if not target then return "Player not found" end
-    local char = target.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local bv = Instance.new("BodyVelocity")
-        bv.Velocity = Vector3.new(0, 0, 0)
-        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bv.Parent = hrp
-        notify("Freeze", "Froze " .. target.Name, 2)
-    end
-end
-
-function Admin.Commands.unfreeze(args)
-    if not args[1] then return "Usage: ;unfreeze <player>" end
-    local target = findPlayer(args[1])
-    if not target then return "Player not found" end
-    local char = target.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local bv = hrp:FindFirstChild("BodyVelocity")
-        if bv then bv:Destroy() end
-        notify("Unfreeze", "Unfroze " .. target.Name, 2)
-    end
-end
-
--- Utility Commands
+-- Chat
 function Admin.Commands.chat(args)
-    if not args[1] then return "Usage: ;chat <message>" end
+    if not args[1] then notify("Chat", "Usage: ;chat <message>", 3); return end
     local message = table.concat(args, " ")
     local chatBar = LocalPlayer.PlayerGui:FindFirstChild("Chat")
     if chatBar then
-        local bar = chatBar:FindFirstChild("Frame"):FindFirstChild("ChatBarParentFrame"):FindFirstChild("ChatBar")
-        if bar then
-            bar.Text = message
-            bar:CaptureFocus()
-            local event = bar:FindFirstChild("FocusLost")
-            if event then event:Fire(true) end
+        local frame = chatBar:FindFirstChild("Frame")
+        if frame then
+            local barFrame = frame:FindFirstChild("ChatBarParentFrame")
+            if barFrame then
+                local bar = barFrame:FindFirstChild("ChatBar")
+                if bar then
+                    bar.Text = message
+                    bar:CaptureFocus()
+                    local event = bar:FindFirstChild("FocusLost")
+                    if event then event:Fire(true) end
+                    notify("Chat", "Sent: " .. message, 2)
+                    return
+                end
+            end
         end
     end
-    notify("Chat", "Sent: " .. message, 2)
+    notify("Chat", "Chat not found", 2)
 end
 
+-- Reset Character
 function Admin.Commands.reset()
     local char = LocalPlayer.Character
     if char then char:BreakJoints() end
     notify("Reset", "Character reset", 2)
 end
 
+-- Help
 function Admin.Commands.help()
-    local commandsList = [[
-=== ADMIN SCRIPT V3 COMMANDS ===
+    local helpText = [[
+=== ADMIN SCRIPT V3 ===
 Prefix: ; 
 
 [MOVEMENT]
@@ -665,21 +634,45 @@ Prefix: ;
 ;addalias <alias> <cmd> - Add alias
 ;aliases - List aliases
 
-[ADMIN (MAY NOT WORK)]
-;kick <player> - Kick player
-;freeze <player> - Freeze player
-;unfreeze <player> - Unfreeze player
-
 [UTILITY]
 ;chat <msg> - Send chat
 ;reset - Reset character
 ;help - Show this help
 
-⚠️ WARNING: This script is outdated!
-Use at your own risk!
+❌ PATCHED (REMOVED): kick, ban, freeze, esp
 ]]
-    print(commandsList)
-    notify("Help", "Commands printed to console", 3)
+    print(helpText)
+    notify("Help", "Commands printed to console (F9)", 3)
+end
+
+-- Status
+function Admin.Commands.status()
+    local status = string.format([[
+=== ADMIN SCRIPT V3 STATUS ===
+Fly: %s
+Noclip: %s
+God Mode: %s
+Infinite Jump: %s
+Walk Speed: %d
+Jump Power: %d
+Fly Speed: %d
+Prefix: %s
+Waypoints: %d
+Keybinds: %d
+Aliases: %d
+]], Admin.Toggles.Flying and "✓" or "✗",
+   Admin.Toggles.Noclip and "✓" or "✗",
+   Admin.Toggles.God and "✓" or "✗",
+   Admin.Toggles.InfiniteJump and "✓" or "✗",
+   Admin.Toggles.Speed,
+   Admin.Toggles.JumpPower,
+   Admin.Toggles.FlySpeed,
+   Admin.Prefix,
+   table.count(Admin.Waypoints),
+   table.count(Admin.Keybinds),
+   table.count(Admin.Aliases))
+    print(status)
+    notify("Status", "Check console (F9)", 2)
 end
 
 -- Command Dispatcher
@@ -690,9 +683,9 @@ local function executeCommand(cmd, args)
     
     local func = Admin.Commands[cmd]
     if func then
-        func(args)
+        pcall(func, args)
     else
-        notify("Error", "Unknown command: " .. cmd .. "\nType ;help", 3)
+        notify("Error", "Unknown: " .. cmd .. "\nType ;help", 3)
     end
 end
 
@@ -725,12 +718,12 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     end
 end)
 
--- ========== RAYFIELD GUI ==========
+-- ========== RAYFIELD GUI (WITH BUTTONS INSTEAD OF INPUTS) ==========
 local Window = Rayfield:CreateWindow({
-    Name = "Admin Script V3 ⚠️",
+    Name = "Admin Script V3",
     Icon = 0,
     LoadingTitle = "Admin Script V3",
-    LoadingSubtitle = "⚠️ USE AT YOUR OWN RISK ⚠️",
+    LoadingSubtitle = "⚠️ USE AT OWN RISK ⚠️",
     Theme = "Default",
     ConfigurationSaving = {Enabled = true, FolderName = "AdminScriptV3", FileName = "Config"},
     KeySystem = false
@@ -738,96 +731,145 @@ local Window = Rayfield:CreateWindow({
 
 -- Main Tab
 local MainTab = Window:CreateTab("Main", 4483362458)
-MainTab:CreateSection("⚠️ WARNING ⚠️")
+MainTab:CreateSection("⚠️ WARNING")
 MainTab:CreateParagraph({
-    Title = "HIGH RISK OF BAN!",
-    Content = "This admin script is OUTDATED and may be detected.\nUse at your own risk!\n\nSome features may not work properly."
+    Title = "OUTDATED SCRIPT!",
+    Content = "Kick/Ban/Freeze commands have been PATCHED by Roblox.\nThey will NOT work anymore.\n\nUse at your own risk!"
 })
 
-MainTab:CreateSection("Command Center")
-MainTab:CreateInput({
-    Name = "Command Bar",
-    PlaceholderText = "Type command... (e.g., ;fly, ;tp Player)",
-    RemoveTextAfterFocus = false,
-    Flag = "CommandInput",
-    Callback = function(text)
-        if text and text ~= "" then
-            local prefix = text:sub(1, 1)
-            local cmdText = (prefix == Admin.Prefix) and text:sub(2) or text
-            local args = {}
-            for arg in cmdText:gmatch("%S+") do
-                table.insert(args, arg)
-            end
-            local cmd = table.remove(args, 1)
-            if cmd then executeCommand(cmd:lower(), args) end
-        end
-    end
-})
+MainTab:CreateSection("Quick Commands")
+MainTab:CreateButton({Name = "Fly", Callback = function() executeCommand("fly", {}) end})
+MainTab:CreateButton({Name = "Noclip", Callback = function() executeCommand("noclip", {}) end})
+MainTab:CreateButton({Name = "God Mode", Callback = function() executeCommand("god", {}) end})
+MainTab:CreateButton({Name = "Infinite Jump", Callback = function() executeCommand("inf jump", {}) end})
+MainTab:CreateButton({Name = "TP to Mouse", Callback = function() executeCommand("tpm", {}) end})
+MainTab:CreateButton({Name = "Reset Character", Callback = function() executeCommand("reset", {}) end})
+
+-- Player List for Teleport
+MainTab:CreateSection("Player Teleport")
+for _, playerName in ipairs(PlayerList) do
+    MainTab:CreateButton({
+        Name = "TP to " .. playerName,
+        Callback = function() executeCommand("tp", {playerName}) end
+    })
+end
 
 -- Movement Tab
 local MovementTab = Window:CreateTab("Movement", 4483362458)
-MovementTab:CreateSection("Toggle Commands")
-MovementTab:CreateButton({Name = "Fly (⚠️ Risk: High)", Callback = function() executeCommand("fly", {}) end})
-MovementTab:CreateButton({Name = "Noclip (⚠️ Risk: High)", Callback = function() executeCommand("noclip", {}) end})
-MovementTab:CreateButton({Name = "God Mode (⚠️ Risk: Medium)", Callback = function() executeCommand("god", {}) end})
+MovementTab:CreateSection("Toggles")
+MovementTab:CreateButton({Name = "Fly", Callback = function() executeCommand("fly", {}) end})
+MovementTab:CreateButton({Name = "Noclip", Callback = function() executeCommand("noclip", {}) end})
+MovementTab:CreateButton({Name = "God Mode", Callback = function() executeCommand("god", {}) end})
 MovementTab:CreateButton({Name = "Infinite Jump", Callback = function() executeCommand("inf jump", {}) end})
 
 MovementTab:CreateSection("Speed Settings")
-MovementTab:CreateSlider({Name = "Walk Speed", Range = {16, 500}, Increment = 1, CurrentValue = 16, Flag = "SpeedSlider", Callback = function(v) executeCommand("speed", {tostring(v)}) end})
-MovementTab:CreateSlider({Name = "Jump Power", Range = {50, 500}, Increment = 1, CurrentValue = 50, Flag = "JumpSlider", Callback = function(v) executeCommand("jumppower", {tostring(v)}) end})
-MovementTab:CreateSlider({Name = "Fly Speed", Range = {10, 500}, Increment = 5, CurrentValue = 50, Flag = "FlySpeedSlider", Callback = function(v) executeCommand("flyspeed", {tostring(v)}) end})
+MovementTab:CreateButton({Name = "Speed 16 (Normal)", Callback = function() executeCommand("speed", {"16"}) end})
+MovementTab:CreateButton({Name = "Speed 50", Callback = function() executeCommand("speed", {"50"}) end})
+MovementTab:CreateButton({Name = "Speed 100", Callback = function() executeCommand("speed", {"100"}) end})
+MovementTab:CreateButton({Name = "Speed 250", Callback = function() executeCommand("speed", {"250"}) end})
+MovementTab:CreateButton({Name = "Speed 500", Callback = function() executeCommand("speed", {"500"}) end})
+
+MovementTab:CreateSection("Jump Settings")
+MovementTab:CreateButton({Name = "Jump 50 (Normal)", Callback = function() executeCommand("jumppower", {"50"}) end})
+MovementTab:CreateButton({Name = "Jump 100", Callback = function() executeCommand("jumppower", {"100"}) end})
+MovementTab:CreateButton({Name = "Jump 200", Callback = function() executeCommand("jumppower", {"200"}) end})
+MovementTab:CreateButton({Name = "Jump 500", Callback = function() executeCommand("jumppower", {"500"}) end})
+
+MovementTab:CreateSection("Fly Speed")
+MovementTab:CreateButton({Name = "Fly Speed 25", Callback = function() executeCommand("flyspeed", {"25"}) end})
+MovementTab:CreateButton({Name = "Fly Speed 50", Callback = function() executeCommand("flyspeed", {"50"}) end})
+MovementTab:CreateButton({Name = "Fly Speed 100", Callback = function() executeCommand("flyspeed", {"100"}) end})
+MovementTab:CreateButton({Name = "Fly Speed 250", Callback = function() executeCommand("flyspeed", {"250"}) end})
 
 -- Teleport Tab
 local TeleportTab = Window:CreateTab("Teleport", 4483362458)
-TeleportTab:CreateSection("Teleport Commands")
+TeleportTab:CreateSection("Mouse Teleport")
 TeleportTab:CreateButton({Name = "Teleport to Mouse", Callback = function() executeCommand("tpm", {}) end})
-TeleportTab:CreateInput({Name = "Teleport to Player", PlaceholderText = "Player name", RemoveTextAfterFocus = false, Flag = "TPInput", Callback = function(t) if t ~= "" then executeCommand("tp", {t}) end end})
-TeleportTab:CreateInput({Name = "Bring Player", PlaceholderText = "Player name", RemoveTextAfterFocus = false, Flag = "BringInput", Callback = function(t) if t ~= "" then executeCommand("bring", {t}) end end})
-TeleportTab:CreateInput({Name = "Go to Player", PlaceholderText = "Player name", RemoveTextAfterFocus = false, Flag = "GotoInput", Callback = function(t) if t ~= "" then executeCommand("goto", {t}) end end})
+
+TeleportTab:CreateSection("Player Teleport")
+for _, playerName in ipairs(PlayerList) do
+    TeleportTab:CreateButton({
+        Name = "TP to " .. playerName,
+        Callback = function() executeCommand("tp", {playerName}) end
+    })
+    TeleportTab:CreateButton({
+        Name = "Bring " .. playerName,
+        Callback = function() executeCommand("bring", {playerName}) end
+    })
+end
 
 -- Waypoints Tab
 local WaypointsTab = Window:CreateTab("Waypoints", 4483362458)
-WaypointsTab:CreateSection("Waypoint Management")
-WaypointsTab:CreateInput({Name = "Save Waypoint", PlaceholderText = "Waypoint name", RemoveTextAfterFocus = false, Flag = "SaveWP", Callback = function(t) if t ~= "" then executeCommand("swp", {t}) end end})
-WaypointsTab:CreateInput({Name = "Go to Waypoint", PlaceholderText = "Waypoint name", RemoveTextAfterFocus = false, Flag = "GoWP", Callback = function(t) if t ~= "" then executeCommand("wp", {t}) end end})
-WaypointsTab:CreateInput({Name = "Delete Waypoint", PlaceholderText = "Waypoint name", RemoveTextAfterFocus = false, Flag = "DelWP", Callback = function(t) if t ~= "" then executeCommand("delwp", {t}) end end})
-WaypointsTab:CreateButton({Name = "List Waypoints", Callback = function() executeCommand("waypoints", {}) end})
+WaypointsTab:CreateSection("Waypoint Commands")
+WaypointsTab:CreateButton({Name = "Save Current Position (test)", Callback = function() executeCommand("swp", {"test"}) end})
+WaypointsTab:CreateButton({Name = "Go to 'test'", Callback = function() executeCommand("wp", {"test"}) end})
+WaypointsTab:CreateButton({Name = "Delete 'test'", Callback = function() executeCommand("delwp", {"test"}) end})
+WaypointsTab:CreateButton({Name = "List All Waypoints", Callback = function() executeCommand("waypoints", {}) end})
 
--- Admin Tab
-local AdminTab = Window:CreateTab("Admin", 4483362458)
-AdminTab:CreateSection("⚠️ MAY NOT WORK ⚠️")
-AdminTab:CreateParagraph({Title = "Warning", Content = "These commands are likely patched in most games!"})
-AdminTab:CreateInput({Name = "Kick Player", PlaceholderText = "Player name", RemoveTextAfterFocus = false, Flag = "KickInput", Callback = function(t) if t ~= "" then executeCommand("kick", {t}) end end})
-AdminTab:CreateInput({Name = "Freeze Player", PlaceholderText = "Player name", RemoveTextAfterFocus = false, Flag = "FreezeInput", Callback = function(t) if t ~= "" then executeCommand("freeze", {t}) end end})
-AdminTab:CreateInput({Name = "Unfreeze Player", PlaceholderText = "Player name", RemoveTextAfterFocus = false, Flag = "UnfreezeInput", Callback = function(t) if t ~= "" then executeCommand("unfreeze", {t}) end end})
+-- Keybinds Tab
+local KeybindsTab = Window:CreateTab("Keybinds", 4483362458)
+KeybindsTab:CreateSection("Preset Keybinds")
+KeybindsTab:CreateButton({Name = "Bind G to Fly", Callback = function() executeCommand("bind", {"G", "fly"}) end})
+KeybindsTab:CreateButton({Name = "Bind V to Noclip", Callback = function() executeCommand("bind", {"V", "noclip"}) end})
+KeybindsTab:CreateButton({Name = "Bind F to God", Callback = function() executeCommand("bind", {"F", "god"}) end})
+KeybindsTab:CreateButton({Name = "Unbind G", Callback = function() executeCommand("unbind", {"G"}) end})
+KeybindsTab:CreateButton({Name = "Unbind V", Callback = function() executeCommand("unbind", {"V"}) end})
+KeybindsTab:CreateButton({Name = "Unbind F", Callback = function() executeCommand("unbind", {"F"}) end})
+KeybindsTab:CreateButton({Name = "List All Keybinds", Callback = function() executeCommand("keybinds", {}) end})
 
 -- Settings Tab
 local SettingsTab = Window:CreateTab("Settings", 4483362458)
 SettingsTab:CreateSection("General")
-SettingsTab:CreateInput({Name = "Command Prefix", PlaceholderText = "Current: " .. Admin.Prefix, RemoveTextAfterFocus = false, Flag = "PrefixInput", Callback = function(t) if t ~= "" then Admin.Prefix = t:sub(1, 1); notify("Prefix", "Changed to " .. Admin.Prefix, 2) end end})
 SettingsTab:CreateButton({Name = "Reset Character", Callback = function() executeCommand("reset", {}) end})
 SettingsTab:CreateButton({Name = "Show Help", Callback = function() executeCommand("help", {}) end})
+SettingsTab:CreateButton({Name = "Show Status", Callback = function() executeCommand("status", {}) end})
 
--- Keybinds Tab
-local KeybindsTab = Window:CreateTab("Keybinds", 4483362458)
-KeybindsTab:CreateSection("Keybind Management")
-KeybindsTab:CreateInput({Name = "Bind Command", PlaceholderText = "G fly", RemoveTextAfterFocus = false, Flag = "BindInput", Callback = function(t) if t ~= "" then local args = {}; for arg in t:gmatch("%S+") do table.insert(args, arg) end; if #args >= 2 then executeCommand("bind", args) end end end})
-KeybindsTab:CreateInput({Name = "Unbind Key", PlaceholderText = "G", RemoveTextAfterFocus = false, Flag = "UnbindInput", Callback = function(t) if t ~= "" then executeCommand("unbind", {t}) end end})
-KeybindsTab:CreateButton({Name = "List Keybinds", Callback = function() executeCommand("keybinds", {}) end})
+-- Info Tab
+local InfoTab = Window:CreateTab("Info", 4483362458)
+InfoTab:CreateSection("About")
+InfoTab:CreateParagraph({
+    Title = "Admin Script V3",
+    Content = [[
+Version: 3.0 (Fixed)
+Status: ⚠️ OUTDATED
+
+WORKING COMMANDS:
+✓ Fly / Noclip / God
+✓ Speed / Jump Power
+✓ TP to Player / Mouse
+✓ Waypoints (Save/Load)
+✓ Keybinds
+✓ Chat Commands
+
+PATCHED (REMOVED):
+✗ Kick / Ban
+✗ Freeze / Jail
+✗ ESP
+✗ Loop / Spam
+
+USE AT YOUR OWN RISK!
+]]
+})
+
+-- Update player list periodically
+task.spawn(function()
+    while true do
+        task.wait(5)
+        updatePlayerList()
+    end
+end)
 
 -- ========== BUTTON HANDLERS ==========
 ContinueButton.MouseButton1Click:Connect(function()
     WarningFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.In, Enum.EasingStyle.Back, 0.3, true)
     task.wait(0.3)
     WarningGui:Destroy()
-    
-    -- Show success notification
-    notify("Admin Script V3", "Loaded! Type " .. Admin.Prefix .. "help", 5)
-    warnUser("THIS SCRIPT IS OUTDATED - HIGH RISK OF BAN!")
+    notify("Admin Script V3", "Loaded! Type ;help", 5)
+    warnUser("Kick/Ban/Freeze are PATCHED and removed!")
     print("=== Admin Script V3 Loaded ===")
-    print("⚠️ WARNING: This script is outdated!")
-    print("Type '" .. Admin.Prefix .. "help' for commands")
-    print("Press INSERT to open Rayfield menu")
+    print("⚠️ Kick/Ban/Freeze have been REMOVED (patched by Roblox)")
+    print("Type ';help' for working commands")
+    print("Press INSERT for Rayfield menu")
 end)
 
 CancelButton.MouseButton1Click:Connect(function()
@@ -841,5 +883,5 @@ end)
 WarningFrame.BackgroundTransparency = 1
 WarningFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.3, true)
 task.wait(0.2)
-WarningFrame:TweenSize(UDim2.new(0, 550, 0, 400), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.5, true)
+WarningFrame:TweenSize(UDim2.new(0, 500, 0, 350), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.5, true)
 WarningFrame.BackgroundTransparency = 0.05
