@@ -1,5 +1,5 @@
 -- Advanced ESP Script - Rayfield GUI
--- Clean & Simple ESP
+-- Fixed: Boxen sind jetzt richtig sichtbar
 
 if getgenv().ADVANCED_ESP_LOADED then return end
 getgenv().ADVANCED_ESP_LOADED = true
@@ -28,25 +28,23 @@ end
 
 -- ========== ESP VARIABLES ==========
 local espEnabled = false
-local espMode = "All" -- "All", "Team", "Enemy", "Selected"
+local espMode = "All"
 local selectedPlayer = nil
 local selectedPlayerName = "None"
 
--- ESP Options
 local showBox = true
 local showName = true
 local showDistance = true
 local showHealth = true
 local showTracer = false
 
--- Farben
 local teamColor = Color3.fromRGB(0, 255, 0)
 local enemyColor = Color3.fromRGB(255, 0, 0)
 local tracerColor = Color3.fromRGB(255, 255, 255)
 local boxTransparency = 0.5
 local maxDistance = 2000
+local boxSize = 1.0  -- Box Größenfaktor
 
--- ESP Objects Storage
 local espObjects = {}
 local playerList = {}
 
@@ -89,47 +87,47 @@ end
 local function createESP(player)
     if espObjects[player] then return end
     
-    local esp = {}
-    
-    -- Box Frame
+    -- Box Frame (größer und sichtbarer)
     local box = Instance.new("Frame")
-    box.Size = UDim2.new(0, 100, 0, 100)
+    box.Size = UDim2.new(0, 120, 0, 180)  -- Standardgröße
     box.Position = UDim2.new(0, 0, 0, 0)
     box.BackgroundColor3 = getESPColor(player)
     box.BackgroundTransparency = boxTransparency
-    box.BorderSizePixel = 1
+    box.BorderSizePixel = 2
     box.BorderColor3 = getESPColor(player)
     box.Visible = false
     box.Parent = espGui
     
     -- Name Label
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(0, 120, 0, 20)
+    nameLabel.Size = UDim2.new(0, 150, 0, 22)
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = getESPColor(player)
     nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextSize = 12
+    nameLabel.TextSize = 14
     nameLabel.Text = player.Name
-    nameLabel.TextStrokeTransparency = 0.5
+    nameLabel.TextStrokeTransparency = 0.3
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Center
     nameLabel.Visible = false
     nameLabel.Parent = espGui
     
     -- Distance Label
     local distanceLabel = Instance.new("TextLabel")
-    distanceLabel.Size = UDim2.new(0, 80, 0, 16)
+    distanceLabel.Size = UDim2.new(0, 100, 0, 18)
     distanceLabel.BackgroundTransparency = 1
-    distanceLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    distanceLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     distanceLabel.Font = Enum.Font.Gotham
-    distanceLabel.TextSize = 10
+    distanceLabel.TextSize = 12
     distanceLabel.Text = ""
-    distanceLabel.TextStrokeTransparency = 0.5
+    distanceLabel.TextStrokeTransparency = 0.3
+    distanceLabel.TextXAlignment = Enum.TextXAlignment.Center
     distanceLabel.Visible = false
     distanceLabel.Parent = espGui
     
     -- Health Bar Background
     local healthBg = Instance.new("Frame")
-    healthBg.Size = UDim2.new(0, 100, 0, 6)
-    healthBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    healthBg.Size = UDim2.new(0, 100, 0, 8)
+    healthBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     healthBg.BorderSizePixel = 0
     healthBg.Visible = false
     healthBg.Parent = espGui
@@ -141,9 +139,9 @@ local function createESP(player)
     healthFill.BorderSizePixel = 0
     healthFill.Parent = healthBg
     
-    -- Tracer Line
+    -- Tracer
     local tracer = Instance.new("Frame")
-    tracer.Size = UDim2.new(0, 100, 0, 2)
+    tracer.Size = UDim2.new(0, 100, 0, 3)
     tracer.BackgroundColor3 = tracerColor
     tracer.BorderSizePixel = 0
     tracer.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -205,10 +203,15 @@ local function updateESP()
                         local dist = (hrp.Position - (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position or Vector3.new())).Magnitude
                         
                         if dist <= maxDistance then
-                            local boxHeight = 150 / headPos.Z
-                            local boxWidth = boxHeight * 0.7
+                            -- GRÖßERE BOX BERECHNUNG
+                            local boxHeight = 200 / headPos.Z * boxSize
+                            local boxWidth = boxHeight * 0.6
                             local boxX = headPos.X - boxWidth / 2
                             local boxY = headPos.Y - boxHeight
+                            
+                            -- Box muss mindestens 50x50 sein
+                            boxHeight = math.max(boxHeight, 60)
+                            boxWidth = math.max(boxWidth, 40)
                             
                             if showBox and esp.Box then
                                 esp.Box.Size = UDim2.new(0, boxWidth, 0, boxHeight)
@@ -222,7 +225,7 @@ local function updateESP()
                             end
                             
                             if showName and esp.NameLabel then
-                                esp.NameLabel.Position = UDim2.new(0, boxX + boxWidth/2 - 60, 0, boxY - 18)
+                                esp.NameLabel.Position = UDim2.new(0, boxX + boxWidth/2 - 75, 0, boxY - 22)
                                 esp.NameLabel.Text = player.Name
                                 esp.NameLabel.TextColor3 = getESPColor(player)
                                 esp.NameLabel.Visible = true
@@ -231,16 +234,16 @@ local function updateESP()
                             end
                             
                             if showDistance and esp.DistanceLabel then
-                                esp.DistanceLabel.Position = UDim2.new(0, boxX + boxWidth/2 - 40, 0, boxY + boxHeight + 2)
-                                esp.DistanceLabel.Text = math.floor(dist) .. "m"
+                                esp.DistanceLabel.Position = UDim2.new(0, boxX + boxWidth/2 - 50, 0, boxY + boxHeight + 2)
+                                esp.DistanceLabel.Text = math.floor(dist) .. " m"
                                 esp.DistanceLabel.Visible = true
                             elseif esp.DistanceLabel then
                                 esp.DistanceLabel.Visible = false
                             end
                             
                             if showHealth and esp.HealthBg then
-                                esp.HealthBg.Size = UDim2.new(0, boxWidth, 0, 4)
-                                esp.HealthBg.Position = UDim2.new(0, boxX, 0, boxY + boxHeight + 18)
+                                esp.HealthBg.Size = UDim2.new(0, boxWidth, 0, 6)
+                                esp.HealthBg.Position = UDim2.new(0, boxX, 0, boxY + boxHeight + 20)
                                 esp.HealthBg.Visible = true
                                 
                                 if esp.HealthFill and esp.Humanoid then
@@ -255,7 +258,7 @@ local function updateESP()
                                 local dx = headPos.X - center.X
                                 local dy = headPos.Y - center.Y
                                 local length = math.sqrt(dx * dx + dy * dy)
-                                if length > 0 and length < 500 then
+                                if length > 0 and length < 800 then
                                     local angle = math.atan2(dy, dx) * (180 / math.pi)
                                     esp.Tracer.Size = UDim2.new(0, length, 0, 2)
                                     esp.Tracer.Position = UDim2.new(0, center.X, 0, center.Y)
@@ -485,6 +488,11 @@ MainTab:CreateDropdown({
             selectedPlayer = Players:FindFirstChild(option)
             selectedPlayerName = option
         end
+        if espEnabled and espMode == "Selected" then
+            for player, esp in pairs(espObjects) do
+                if esp.Box then esp.Box.Visible = false end
+            end
+        end
         notify("Selected Player", selectedPlayerName, 1)
     end
 })
@@ -600,21 +608,17 @@ VisualTab:CreateButton({
     end
 })
 
-VisualTab:CreateButton({
-    Name = "Tracer: White",
-    Callback = function()
-        tracerColor = Color3.fromRGB(255, 255, 255)
-        updateSettings()
-        notify("Tracer Color", "White", 1)
-    end
-})
+VisualTab:CreateSection("Size Settings")
 
-VisualTab:CreateButton({
-    Name = "Tracer: Red",
-    Callback = function()
-        tracerColor = Color3.fromRGB(255, 0, 0)
-        updateSettings()
-        notify("Tracer Color", "Red", 1)
+VisualTab:CreateSlider({
+    Name = "Box Size",
+    Range = {0.5, 2.0},
+    Increment = 0.1,
+    CurrentValue = boxSize,
+    Flag = "BoxSize",
+    Callback = function(value)
+        boxSize = value
+        notify("Box Size", string.format("%.1f", value), 1)
     end
 })
 
@@ -668,6 +672,7 @@ FEATURES:
 • Tracer Line
 • Team/Enemy Colors
 • Player Selection
+• Adjustable Box Size
 
 MODES:
 • All Players
@@ -712,4 +717,5 @@ end
 
 notify("Advanced ESP", "Loaded! Press INSERT for menu", 3)
 print("=== Advanced ESP Loaded ===")
+print("Boxen sind jetzt sichtbar! Bei Bedarf Box Size im Visual Tab erhöhen.")
 print("Press INSERT for Rayfield menu")
