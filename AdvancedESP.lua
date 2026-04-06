@@ -1,5 +1,5 @@
 -- Advanced ESP Script - Rayfield GUI
--- Fixed: Boxen sind jetzt richtig sichtbar
+-- Fixed: Korrekte Box-Positionierung
 
 if getgenv().ADVANCED_ESP_LOADED then return end
 getgenv().ADVANCED_ESP_LOADED = true
@@ -43,7 +43,7 @@ local enemyColor = Color3.fromRGB(255, 0, 0)
 local tracerColor = Color3.fromRGB(255, 255, 255)
 local boxTransparency = 0.5
 local maxDistance = 2000
-local boxSize = 1.0  -- Box Größenfaktor
+local boxSize = 1.0
 
 local espObjects = {}
 local playerList = {}
@@ -87,9 +87,9 @@ end
 local function createESP(player)
     if espObjects[player] then return end
     
-    -- Box Frame (größer und sichtbarer)
+    -- Box Frame
     local box = Instance.new("Frame")
-    box.Size = UDim2.new(0, 120, 0, 180)  -- Standardgröße
+    box.Size = UDim2.new(0, 100, 0, 100)
     box.Position = UDim2.new(0, 0, 0, 0)
     box.BackgroundColor3 = getESPColor(player)
     box.BackgroundTransparency = boxTransparency
@@ -100,7 +100,7 @@ local function createESP(player)
     
     -- Name Label
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(0, 150, 0, 22)
+    nameLabel.Size = UDim2.new(0, 150, 0, 20)
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = getESPColor(player)
     nameLabel.Font = Enum.Font.GothamBold
@@ -113,7 +113,7 @@ local function createESP(player)
     
     -- Distance Label
     local distanceLabel = Instance.new("TextLabel")
-    distanceLabel.Size = UDim2.new(0, 100, 0, 18)
+    distanceLabel.Size = UDim2.new(0, 100, 0, 16)
     distanceLabel.BackgroundTransparency = 1
     distanceLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     distanceLabel.Font = Enum.Font.Gotham
@@ -126,7 +126,7 @@ local function createESP(player)
     
     -- Health Bar Background
     local healthBg = Instance.new("Frame")
-    healthBg.Size = UDim2.new(0, 100, 0, 8)
+    healthBg.Size = UDim2.new(0, 100, 0, 6)
     healthBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     healthBg.BorderSizePixel = 0
     healthBg.Visible = false
@@ -178,7 +178,7 @@ local function createESP(player)
     end
 end
 
--- ========== UPDATE ESP POSITIONS ==========
+-- ========== UPDATE ESP POSITIONS (KORRIGIERT) ==========
 local function updateESP()
     local camera = workspace.CurrentCamera
     if not camera then return end
@@ -192,26 +192,31 @@ local function updateESP()
         if show then
             local char = player.Character
             if char then
+                -- Verwende HumanoidRootPart für die Positionierung
                 local hrp = char:FindFirstChild("HumanoidRootPart")
                 local head = char:FindFirstChild("Head")
                 
-                if hrp and head then
-                    local headPos, headOnScreen = camera:WorldToViewportPoint(head.Position)
+                if hrp then
+                    -- Position des HumanoidRootPart auf dem Bildschirm
                     local hrpPos, hrpOnScreen = camera:WorldToViewportPoint(hrp.Position)
                     
-                    if headOnScreen and hrpOnScreen and headPos.Z > 0 then
-                        local dist = (hrp.Position - (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position or Vector3.new())).Magnitude
+                    if hrpOnScreen and hrpPos.Z > 0 then
+                        -- Distanz berechnen
+                        local localHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        local dist = localHrp and (hrp.Position - localHrp.Position).Magnitude or 0
                         
                         if dist <= maxDistance then
-                            -- GRÖßERE BOX BERECHNUNG
-                            local boxHeight = 200 / headPos.Z * boxSize
+                            -- Box-Größe basierend auf Entfernung
+                            local boxHeight = 180 / hrpPos.Z * boxSize
                             local boxWidth = boxHeight * 0.6
-                            local boxX = headPos.X - boxWidth / 2
-                            local boxY = headPos.Y - boxHeight
                             
-                            -- Box muss mindestens 50x50 sein
-                            boxHeight = math.max(boxHeight, 60)
-                            boxWidth = math.max(boxWidth, 40)
+                            -- Mindestgröße
+                            boxHeight = math.max(boxHeight, 50)
+                            boxWidth = math.max(boxWidth, 35)
+                            
+                            -- Box zentriert auf dem HumanoidRootPart
+                            local boxX = hrpPos.X - boxWidth / 2
+                            local boxY = hrpPos.Y - boxHeight / 2
                             
                             if showBox and esp.Box then
                                 esp.Box.Size = UDim2.new(0, boxWidth, 0, boxHeight)
@@ -224,8 +229,9 @@ local function updateESP()
                                 esp.Box.Visible = false
                             end
                             
+                            -- Name ÜBER der Box
                             if showName and esp.NameLabel then
-                                esp.NameLabel.Position = UDim2.new(0, boxX + boxWidth/2 - 75, 0, boxY - 22)
+                                esp.NameLabel.Position = UDim2.new(0, boxX + boxWidth/2 - 75, 0, boxY - 18)
                                 esp.NameLabel.Text = player.Name
                                 esp.NameLabel.TextColor3 = getESPColor(player)
                                 esp.NameLabel.Visible = true
@@ -233,17 +239,19 @@ local function updateESP()
                                 esp.NameLabel.Visible = false
                             end
                             
+                            -- Distance UNTER der Box
                             if showDistance and esp.DistanceLabel then
                                 esp.DistanceLabel.Position = UDim2.new(0, boxX + boxWidth/2 - 50, 0, boxY + boxHeight + 2)
-                                esp.DistanceLabel.Text = math.floor(dist) .. " m"
+                                esp.DistanceLabel.Text = math.floor(dist) .. "m"
                                 esp.DistanceLabel.Visible = true
                             elseif esp.DistanceLabel then
                                 esp.DistanceLabel.Visible = false
                             end
                             
+                            -- Health Bar UNTER der Box
                             if showHealth and esp.HealthBg then
-                                esp.HealthBg.Size = UDim2.new(0, boxWidth, 0, 6)
-                                esp.HealthBg.Position = UDim2.new(0, boxX, 0, boxY + boxHeight + 20)
+                                esp.HealthBg.Size = UDim2.new(0, boxWidth, 0, 5)
+                                esp.HealthBg.Position = UDim2.new(0, boxX, 0, boxY + boxHeight + 18)
                                 esp.HealthBg.Visible = true
                                 
                                 if esp.HealthFill and esp.Humanoid then
@@ -254,9 +262,10 @@ local function updateESP()
                                 esp.HealthBg.Visible = false
                             end
                             
+                            -- Tracer vom Zentrum zum Spieler
                             if showTracer and esp.Tracer then
-                                local dx = headPos.X - center.X
-                                local dy = headPos.Y - center.Y
+                                local dx = hrpPos.X - center.X
+                                local dy = hrpPos.Y - center.Y
                                 local length = math.sqrt(dx * dx + dy * dy)
                                 if length > 0 and length < 800 then
                                     local angle = math.atan2(dy, dx) * (180 / math.pi)
@@ -717,5 +726,5 @@ end
 
 notify("Advanced ESP", "Loaded! Press INSERT for menu", 3)
 print("=== Advanced ESP Loaded ===")
-print("Boxen sind jetzt sichtbar! Bei Bedarf Box Size im Visual Tab erhöhen.")
+print("Boxen sind jetzt korrekt positioniert (zentriert auf HumanoidRootPart)")
 print("Press INSERT for Rayfield menu")
